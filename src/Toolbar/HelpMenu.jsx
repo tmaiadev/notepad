@@ -26,6 +26,7 @@ function HelpMenu() {
 
   function handleAction(id) {
     if (id === 'cheat-sheet') setShowCheatSheet(true)
+    if (id === 'source-code') window.open('https://github.com/tmaiadev/notepad', '_blank')
   }
 
   return (

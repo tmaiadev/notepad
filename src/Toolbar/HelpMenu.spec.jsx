@@ -9,6 +9,16 @@ describe('HelpMenu', () => {
     expect(screen.getByText('Source Code')).toBeInTheDocument()
   })
 
+  describe('Source Code action', () => {
+    it('opens the source code URL in a new tab', () => {
+      jest.spyOn(window, 'open').mockImplementation(() => {})
+      render(<HelpMenu />)
+      fireEvent.click(screen.getByText('Source Code').closest('li'))
+      expect(window.open).toHaveBeenCalledWith('https://github.com/tmaiadev/notepad', '_blank')
+      window.open.mockRestore()
+    })
+  })
+
   describe('Cheat Sheet modal', () => {
     it('opens modal when Cheat Sheet is clicked', () => {
       render(<HelpMenu />)
