@@ -1,11 +1,40 @@
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
 
-function EditMenu() {
+function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
+  async function handleAction(id) {
+    if (id === 'undo') { onUndo?.(); return }
+    if (id === 'redo') { onRedo?.(); return }
+
+    const textarea = textareaRef?.current
+    if (!textarea) return
+
+    if (id === 'copy') {
+      const selected = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
+      await navigator.clipboard.writeText(selected)
+    } else if (id === 'cut') {
+      const { selectionStart, selectionEnd, value } = textarea
+      await navigator.clipboard.writeText(value.slice(selectionStart, selectionEnd))
+      onTextChange(value.slice(0, selectionStart) + value.slice(selectionEnd))
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(selectionStart, selectionStart)
+      })
+    } else if (id === 'paste') {
+      const clip = await navigator.clipboard.readText()
+      const { selectionStart, selectionEnd, value } = textarea
+      onTextChange(value.slice(0, selectionStart) + clip + value.slice(selectionEnd))
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(selectionStart + clip.length, selectionStart + clip.length)
+      })
+    }
+  }
+
   return (
     <Dropdown>
       <Button size="sm" variant="ghost">Edit</Button>
       <Dropdown.Popover>
-        <Dropdown.Menu>
+        <Dropdown.Menu onAction={handleAction}>
           <Dropdown.Item id="copy" textValue="Copy">
             <Label>Copy</Label>
             <Kbd className="ms-auto" slot="keyboard" variant="light">
