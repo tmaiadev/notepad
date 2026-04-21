@@ -6,9 +6,13 @@ function App() {
   const [text, setText] = useState(() => localStorage.getItem('notepad') ?? '')
   const [viewMode, setViewMode] = useState('raw')
 
+  function handleTextChange(value) {
+    setText(value)
+    localStorage.setItem('notepad', value)
+  }
+
   function handleChange(e) {
-    setText(e.target.value)
-    localStorage.setItem('notepad', e.target.value)
+    handleTextChange(e.target.value)
   }
 
   const html = useMemo(() => {
@@ -18,7 +22,7 @@ function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <Toolbar viewMode={viewMode} onViewModeChange={setViewMode} text={text} />
+      <Toolbar viewMode={viewMode} onViewModeChange={setViewMode} text={text} onTextChange={handleTextChange} />
       {viewMode === 'raw' ? (
         <textarea
           className="notepad"

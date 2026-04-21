@@ -1,14 +1,16 @@
 import { useRef } from 'react'
 import { Button, Dropdown, Kbd, Label } from '@heroui/react'
 
+const fileTypes = [
+  {
+    description: 'Text Files',
+    accept: { 'text/plain': ['.txt', '.md'] },
+  },
+]
+
 const pickerOpts = {
   suggestedName: 'untitled.txt',
-  types: [
-    {
-      description: 'Text Files',
-      accept: { 'text/plain': ['.txt', '.md'] },
-    },
-  ],
+  types: fileTypes,
 }
 
 async function writeToHandle(handle, text) {
@@ -29,8 +31,33 @@ function downloadFallback(text) {
   URL.revokeObjectURL(url)
 }
 
-function FileMenu({ text }) {
+function FileMenu({ text, onTextChange }) {
   const fileHandleRef = useRef(null)
+
+  async function handleOpen() {
+    if (typeof window.showOpenFilePicker === 'function') {
+      const [handle] = await window.showOpenFilePicker({
+        types: fileTypes,
+        multiple: false,
+      })
+      const file = await handle.getFile()
+      const content = await file.text()
+      fileHandleRef.current = handle
+      onTextChange(content)
+    } else {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.txt,.md'
+      input.addEventListener('change', async () => {
+        const file = input.files[0]
+        if (file) {
+          const content = await file.text()
+          onTextChange(content)
+        }
+      })
+      input.click()
+    }
+  }
 
   async function handleSave() {
     if (fileHandleRef.current) {
@@ -55,6 +82,7 @@ function FileMenu({ text }) {
   }
 
   function handleAction(id) {
+    if (id === 'open') handleOpen()
     if (id === 'save') handleSave()
     if (id === 'save-as') handleSaveAs()
   }
