@@ -13,7 +13,7 @@ function App() {
 
   const html = useMemo(() => {
     if (viewMode !== 'visualizer') return ''
-    return marked.parse(text)
+    return marked.parse(text).replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '')
   }, [text, viewMode])
 
   return (
