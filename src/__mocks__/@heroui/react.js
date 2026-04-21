@@ -1,7 +1,7 @@
 import React from 'react'
 
 // Button maps onPress → onClick
-export function Button({ children, onPress, size: _size, variant, ...props }) {
+export function Button({ children, onPress, size: _size, variant, isIconOnly: _isIconOnly, ...props }) {
   return <button onClick={onPress} variant={variant} {...props}>{children}</button>
 }
 

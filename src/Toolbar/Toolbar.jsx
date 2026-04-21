@@ -1,4 +1,5 @@
 import { Button, ButtonGroup } from '@heroui/react'
+import { PencilIcon, EyeIcon } from 'lucide-react'
 import FileMenu from './FileMenu'
 import EditMenu from './EditMenu'
 import InsertMenu from './InsertMenu'
@@ -16,17 +17,21 @@ function Toolbar({ viewMode, onViewModeChange }) {
       <div className="flex items-center">
         <ButtonGroup size="sm" variant="ghost">
           <Button
+            aria-label="Edit"
             variant={viewMode === 'raw' ? 'secondary' : 'ghost'}
             onPress={() => onViewModeChange('raw')}
+            isIconOnly
           >
-            Raw
+            <PencilIcon size={16} />
           </Button>
           <Button
+            aria-label="Formatted Document"
             variant={viewMode === 'visualizer' ? 'secondary' : 'ghost'}
             onPress={() => onViewModeChange('visualizer')}
+            isIconOnly
           >
             <ButtonGroup.Separator />
-            Visualizer
+            <EyeIcon size={16} />
           </Button>
         </ButtonGroup>
       </div>

@@ -41,7 +41,7 @@ describe('App', () => {
   it('renders parsed markdown in visualizer mode', () => {
     localStorage.setItem('notepad', 'some markdown')
     render(<App />)
-    fireEvent.click(screen.getByText('Visualizer'))
+    fireEvent.click(screen.getByLabelText('Formatted Document'))
     expect(screen.getByText('some markdown')).toBeInTheDocument()
   })
 
@@ -49,7 +49,7 @@ describe('App', () => {
     marked.parse.mockReturnValueOnce('<p>safe</p><script>alert("xss")</script>')
     localStorage.setItem('notepad', 'xss attempt')
     render(<App />)
-    fireEvent.click(screen.getByText('Visualizer'))
+    fireEvent.click(screen.getByLabelText('Formatted Document'))
     expect(screen.queryByText('alert("xss")')).not.toBeInTheDocument()
     expect(screen.getByText('safe')).toBeInTheDocument()
   })
@@ -58,7 +58,7 @@ describe('App', () => {
     marked.parse.mockReturnValueOnce('<p>content</p><style>body{display:none}</style>')
     localStorage.setItem('notepad', 'style attempt')
     render(<App />)
-    fireEvent.click(screen.getByText('Visualizer'))
+    fireEvent.click(screen.getByLabelText('Formatted Document'))
     expect(screen.queryByText('body{display:none}')).not.toBeInTheDocument()
     expect(screen.getByText('content')).toBeInTheDocument()
   })
