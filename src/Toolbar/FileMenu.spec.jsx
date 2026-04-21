@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import FileMenu from './FileMenu'
 
 function createMockHandle() {
@@ -47,7 +47,7 @@ async function readBlob(blob) {
   })
 }
 
-const flush = () => new Promise(r => setTimeout(r, 0))
+const flush = () => act(() => new Promise(r => setTimeout(r, 0)))
 
 const defaultProps = { text: '', onTextChange: jest.fn() }
 
@@ -56,6 +56,7 @@ describe('FileMenu', () => {
     delete window.showSaveFilePicker
     delete window.showOpenFilePicker
     if (document.createElement.mockRestore) document.createElement.mockRestore()
+    localStorage.clear()
   })
 
   it('renders "File" button and all 4 items', () => {
@@ -80,6 +81,93 @@ describe('FileMenu', () => {
     const abbrs = screen.getAllByTestId('Kbd.Abbr')
     const shiftAbbr = abbrs.find(el => el.getAttribute('data-key') === 'shift')
     expect(shiftAbbr).toBeTruthy()
+  })
+
+  describe('New action', () => {
+    it('resets immediately when text is empty', () => {
+      const onTextChange = jest.fn()
+      localStorage.setItem('notepad', '')
+
+      render(<FileMenu text="" onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('New'))
+
+      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
+      expect(onTextChange).toHaveBeenCalledWith('')
+      expect(localStorage.getItem('notepad')).toBeNull()
+    })
+
+    it('shows confirmation dialog when text is not empty', () => {
+      render(<FileMenu text="some content" onTextChange={jest.fn()} />)
+      fireEvent.click(screen.getByText('New'))
+
+      expect(screen.getByText('Unsaved Changes')).toBeInTheDocument()
+      expect(screen.getByText(/Do you want to save your changes/)).toBeInTheDocument()
+    })
+
+    it('Cancel closes dialog without changing anything', () => {
+      const onTextChange = jest.fn()
+      render(<FileMenu text="keep me" onTextChange={onTextChange} />)
+
+      fireEvent.click(screen.getByText('New'))
+      expect(screen.getByText('Unsaved Changes')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByText('Cancel'))
+      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
+      expect(onTextChange).not.toHaveBeenCalled()
+    })
+
+    it('No discards content, clears localStorage, and closes dialog', () => {
+      const onTextChange = jest.fn()
+      localStorage.setItem('notepad', 'old stuff')
+
+      render(<FileMenu text="old stuff" onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('New'))
+      fireEvent.click(screen.getByText('No'))
+
+      expect(onTextChange).toHaveBeenCalledWith('')
+      expect(localStorage.getItem('notepad')).toBeNull()
+      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
+    })
+
+    it('Yes saves then resets content, clears localStorage, and closes dialog', async () => {
+      const { handle, writeFn } = createMockHandle()
+      window.showSaveFilePicker = jest.fn().mockResolvedValue(handle)
+      const onTextChange = jest.fn()
+      localStorage.setItem('notepad', 'save me')
+
+      render(<FileMenu text="save me" onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('New'))
+      fireEvent.click(screen.getByText('Yes'))
+      await flush()
+
+      expect(window.showSaveFilePicker).toHaveBeenCalled()
+      expect(writeFn).toHaveBeenCalledWith('save me')
+      expect(onTextChange).toHaveBeenCalledWith('')
+      expect(localStorage.getItem('notepad')).toBeNull()
+      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
+    })
+
+    it('Yes + Save clears fileHandleRef so next Save prompts picker', async () => {
+      const { handle: firstHandle, writeFn: firstWriteFn } = createMockHandle()
+      const { handle: secondHandle } = createMockHandle()
+      window.showSaveFilePicker = jest.fn()
+        .mockResolvedValueOnce(firstHandle)
+        .mockResolvedValueOnce(secondHandle)
+      const onTextChange = jest.fn()
+
+      render(<FileMenu text="content" onTextChange={onTextChange} />)
+
+      // New → Yes saves and resets
+      fireEvent.click(screen.getByText('New'))
+      fireEvent.click(screen.getByText('Yes'))
+      await flush()
+      expect(firstWriteFn).toHaveBeenCalledWith('content')
+
+      // Next Save should prompt picker again since handle was cleared
+      fireEvent.click(screen.getByText('Save'))
+      await flush()
+      expect(window.showSaveFilePicker).toHaveBeenCalledTimes(2)
+    })
   })
 
   describe('Open action', () => {
@@ -110,11 +198,9 @@ describe('FileMenu', () => {
 
       render(<FileMenu text="opened text" onTextChange={jest.fn()} />)
 
-      // Open a file
       fireEvent.click(screen.getByText('Open'))
       await flush()
 
-      // Save should reuse the opened handle
       fireEvent.click(screen.getByText('Save'))
       await flush()
 
@@ -145,12 +231,10 @@ describe('FileMenu', () => {
 
       expect(clickSpy).toHaveBeenCalled()
 
-      // Simulate the change event on the created input
       const createCalls = document.createElement.mock.calls
       const inputCall = createCalls.find(([tag]) => tag === 'input')
       expect(inputCall).toBeTruthy()
 
-      // The input's change listener was added; fire it
       const inputEl = document.createElement.mock.results.find(
         (r, i) => createCalls[i][0] === 'input'
       ).value

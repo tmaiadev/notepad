@@ -1,8 +1,15 @@
 import React from 'react'
 
-// Button maps onPress → onClick
-export function Button({ children, onPress, size: _size, variant, isIconOnly: _isIconOnly, ...props }) {
-  return <button onClick={onPress} variant={variant} {...props}>{children}</button>
+const AlertDialogCloseContext = React.createContext(null)
+
+// Button maps onPress → onClick, slot="close" calls AlertDialog close
+export function Button({ children, onPress, size: _size, variant, isIconOnly: _isIconOnly, slot, ...props }) {
+  const closeFn = React.useContext(AlertDialogCloseContext)
+  function handleClick() {
+    if (slot === 'close' && closeFn) closeFn()
+    if (onPress) onPress()
+  }
+  return <button onClick={handleClick} variant={variant} {...props}>{children}</button>
 }
 
 // ButtonGroup with Separator sub-component
@@ -69,3 +76,43 @@ export function Label({ children, ...props }) {
 export function Separator({ children: _children, ...props }) {
   return <hr data-testid="Separator" {...props} />
 }
+
+// AlertDialog compound component
+function AlertDialogBackdrop({ children, isOpen, onOpenChange, ...props }) {
+  if (!isOpen) return null
+  const close = () => onOpenChange && onOpenChange(false)
+  return (
+    <AlertDialogCloseContext.Provider value={close}>
+      <div data-testid="AlertDialog.Backdrop" {...props}>{children}</div>
+    </AlertDialogCloseContext.Provider>
+  )
+}
+function AlertDialogContainer({ children, ...props }) {
+  return <div data-testid="AlertDialog.Container" {...props}>{children}</div>
+}
+function AlertDialogDialog({ children, ...props }) {
+  return <div data-testid="AlertDialog.Dialog" role={props.role || 'alertdialog'} {...props}>{children}</div>
+}
+function AlertDialogHeader({ children, ...props }) {
+  return <div data-testid="AlertDialog.Header" {...props}>{children}</div>
+}
+function AlertDialogHeading({ children, ...props }) {
+  return <h2 data-testid="AlertDialog.Heading" {...props}>{children}</h2>
+}
+function AlertDialogBody({ children, ...props }) {
+  return <div data-testid="AlertDialog.Body" {...props}>{children}</div>
+}
+function AlertDialogFooter({ children, ...props }) {
+  return <div data-testid="AlertDialog.Footer" {...props}>{children}</div>
+}
+
+export function AlertDialog({ children, ...props }) {
+  return <div data-testid="AlertDialog" {...props}>{children}</div>
+}
+AlertDialog.Backdrop = AlertDialogBackdrop
+AlertDialog.Container = AlertDialogContainer
+AlertDialog.Dialog = AlertDialogDialog
+AlertDialog.Header = AlertDialogHeader
+AlertDialog.Heading = AlertDialogHeading
+AlertDialog.Body = AlertDialogBody
+AlertDialog.Footer = AlertDialogFooter

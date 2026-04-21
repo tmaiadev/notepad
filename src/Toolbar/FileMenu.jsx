@@ -1,5 +1,5 @@
-import { useRef } from 'react'
-import { Button, Dropdown, Kbd, Label } from '@heroui/react'
+import { useRef, useState } from 'react'
+import { AlertDialog, Button, Dropdown, Kbd, Label } from '@heroui/react'
 
 const fileTypes = [
   {
@@ -33,6 +33,32 @@ function downloadFallback(text) {
 
 function FileMenu({ text, onTextChange }) {
   const fileHandleRef = useRef(null)
+  const [showNewDialog, setShowNewDialog] = useState(false)
+
+  function resetFile() {
+    fileHandleRef.current = null
+    onTextChange('')
+    localStorage.removeItem('notepad')
+  }
+
+  async function handleNew() {
+    if (text.length > 0) {
+      setShowNewDialog(true)
+    } else {
+      resetFile()
+    }
+  }
+
+  async function handleNewSave() {
+    await handleSave()
+    resetFile()
+    setShowNewDialog(false)
+  }
+
+  function handleNewDiscard() {
+    resetFile()
+    setShowNewDialog(false)
+  }
 
   async function handleOpen() {
     if (typeof window.showOpenFilePicker === 'function') {
@@ -82,48 +108,69 @@ function FileMenu({ text, onTextChange }) {
   }
 
   function handleAction(id) {
+    if (id === 'new') handleNew()
     if (id === 'open') handleOpen()
     if (id === 'save') handleSave()
     if (id === 'save-as') handleSaveAs()
   }
 
   return (
-    <Dropdown>
-      <Button size="sm" variant="ghost">File</Button>
-      <Dropdown.Popover>
-        <Dropdown.Menu onAction={handleAction}>
-          <Dropdown.Item id="new" textValue="New">
-            <Label>New</Label>
-            <Kbd className="ms-auto" slot="keyboard" variant="light">
-              <Kbd.Abbr keyValue="command" />
-              <Kbd.Content>N</Kbd.Content>
-            </Kbd>
-          </Dropdown.Item>
-          <Dropdown.Item id="open" textValue="Open">
-            <Label>Open</Label>
-            <Kbd className="ms-auto" slot="keyboard" variant="light">
-              <Kbd.Abbr keyValue="command" />
-              <Kbd.Content>O</Kbd.Content>
-            </Kbd>
-          </Dropdown.Item>
-          <Dropdown.Item id="save" textValue="Save">
-            <Label>Save</Label>
-            <Kbd className="ms-auto" slot="keyboard" variant="light">
-              <Kbd.Abbr keyValue="command" />
-              <Kbd.Content>S</Kbd.Content>
-            </Kbd>
-          </Dropdown.Item>
-          <Dropdown.Item id="save-as" textValue="Save As">
-            <Label>Save As</Label>
-            <Kbd className="ms-auto" slot="keyboard" variant="light">
-              <Kbd.Abbr keyValue="command" />
-              <Kbd.Abbr keyValue="shift" />
-              <Kbd.Content>S</Kbd.Content>
-            </Kbd>
-          </Dropdown.Item>
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
+    <>
+      <Dropdown>
+        <Button size="sm" variant="ghost">File</Button>
+        <Dropdown.Popover>
+          <Dropdown.Menu onAction={handleAction}>
+            <Dropdown.Item id="new" textValue="New">
+              <Label>New</Label>
+              <Kbd className="ms-auto" slot="keyboard" variant="light">
+                <Kbd.Abbr keyValue="command" />
+                <Kbd.Content>N</Kbd.Content>
+              </Kbd>
+            </Dropdown.Item>
+            <Dropdown.Item id="open" textValue="Open">
+              <Label>Open</Label>
+              <Kbd className="ms-auto" slot="keyboard" variant="light">
+                <Kbd.Abbr keyValue="command" />
+                <Kbd.Content>O</Kbd.Content>
+              </Kbd>
+            </Dropdown.Item>
+            <Dropdown.Item id="save" textValue="Save">
+              <Label>Save</Label>
+              <Kbd className="ms-auto" slot="keyboard" variant="light">
+                <Kbd.Abbr keyValue="command" />
+                <Kbd.Content>S</Kbd.Content>
+              </Kbd>
+            </Dropdown.Item>
+            <Dropdown.Item id="save-as" textValue="Save As">
+              <Label>Save As</Label>
+              <Kbd className="ms-auto" slot="keyboard" variant="light">
+                <Kbd.Abbr keyValue="command" />
+                <Kbd.Abbr keyValue="shift" />
+                <Kbd.Content>S</Kbd.Content>
+              </Kbd>
+            </Dropdown.Item>
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+
+      <AlertDialog.Backdrop isOpen={showNewDialog} onOpenChange={setShowNewDialog}>
+        <AlertDialog.Container>
+          <AlertDialog.Dialog role="alertdialog">
+            <AlertDialog.Header>
+              <AlertDialog.Heading>Unsaved Changes</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              Do you want to save your changes before creating a new file? Your unsaved changes will be lost.
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button variant="tertiary" slot="close">Cancel</Button>
+              <Button variant="ghost" onPress={handleNewDiscard}>No</Button>
+              <Button variant="primary" onPress={handleNewSave}>Yes</Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
+    </>
   )
 }
 
