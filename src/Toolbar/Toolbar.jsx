@@ -5,11 +5,11 @@ import EditMenu from './EditMenu'
 import InsertMenu from './InsertMenu'
 import HelpMenu from './HelpMenu'
 
-function Toolbar({ viewMode, onViewModeChange }) {
+function Toolbar({ viewMode, onViewModeChange, text }) {
   return (
     <div className="toolbar flex w-full items-center justify-between border-b border-border px-2 py-1">
       <div className="flex items-center">
-        <FileMenu />
+        <FileMenu text={text} />
         <EditMenu />
         <InsertMenu />
         <HelpMenu />

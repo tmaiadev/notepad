@@ -18,11 +18,18 @@ ButtonGroup.Separator = ButtonGroupSeparator
 function DropdownPopover({ children, ...props }) {
   return <div data-testid="Dropdown.Popover" {...props}>{children}</div>
 }
-function DropdownMenu({ children, ...props }) {
-  return <ul data-testid="Dropdown.Menu" {...props}>{children}</ul>
+function DropdownMenu({ children, onAction, ...props }) {
+  return <ul data-testid="Dropdown.Menu" data-onaction={onAction ? 'true' : undefined} {...props}>{
+    React.Children.map(children, child => {
+      if (React.isValidElement(child) && onAction) {
+        return React.cloneElement(child, { _onAction: onAction })
+      }
+      return child
+    })
+  }</ul>
 }
-function DropdownItem({ children, textValue: _textValue, id: _id, ...props }) {
-  return <li data-testid="Dropdown.Item" {...props}>{children}</li>
+function DropdownItem({ children, textValue: _textValue, id, _onAction, ...props }) {
+  return <li data-testid="Dropdown.Item" onClick={() => _onAction && _onAction(id)} {...props}>{children}</li>
 }
 function DropdownSubmenuTrigger({ children, ...props }) {
   return <div data-testid="Dropdown.SubmenuTrigger" {...props}>{children}</div>

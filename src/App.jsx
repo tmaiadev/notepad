@@ -18,7 +18,7 @@ function App() {
 
   return (
     <div className="flex h-full flex-col">
-      <Toolbar viewMode={viewMode} onViewModeChange={setViewMode} />
+      <Toolbar viewMode={viewMode} onViewModeChange={setViewMode} text={text} />
       {viewMode === 'raw' ? (
         <textarea
           className="notepad"
