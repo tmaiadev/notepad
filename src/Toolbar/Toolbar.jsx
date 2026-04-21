@@ -11,7 +11,7 @@ function Toolbar({ viewMode, onViewModeChange, text, onTextChange, textareaRef, 
       <div className="flex items-center">
         <FileMenu text={text} onTextChange={onTextChange} />
         <EditMenu textareaRef={textareaRef} onTextChange={onTextChange} onUndo={onUndo} onRedo={onRedo} />
-        <InsertMenu />
+        <InsertMenu textareaRef={textareaRef} onTextChange={onTextChange} />
         <HelpMenu />
       </div>
       <div className="flex items-center">

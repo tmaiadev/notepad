@@ -1,5 +1,5 @@
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
-import { cycleHeading, wrapSelection } from '../utils'
+import { cycleHeading, toggleBlockquote, wrapSelection } from '../utils'
 
 function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
   async function handleAction(id) {
@@ -32,6 +32,14 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
       const markers = { bold: '**', italic: '*', strikethrough: '~~', code: '`' }
       const { selectionStart, selectionEnd, value } = textarea
       const { newValue, newSelectionStart, newSelectionEnd } = wrapSelection(value, selectionStart, selectionEnd, markers[id])
+      onTextChange(newValue)
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
+      })
+    } else if (id === 'blockquote') {
+      const { selectionStart, selectionEnd, value } = textarea
+      const { newValue, newSelectionStart, newSelectionEnd } = toggleBlockquote(value, selectionStart, selectionEnd)
       onTextChange(newValue)
       requestAnimationFrame(() => {
         textarea.focus()

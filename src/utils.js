@@ -1,3 +1,13 @@
+export function insertSnippet(value, selectionStart, snippet) {
+  const rawEnd = value.indexOf('\n', selectionStart)
+  const lineEnd = rawEnd === -1 ? value.length : rawEnd
+  const insertion = '\n' + snippet
+  return {
+    newValue: value.slice(0, lineEnd) + insertion + value.slice(lineEnd),
+    newCursorPos: lineEnd + insertion.length,
+  }
+}
+
 export function wrapSelection(value, selectionStart, selectionEnd, marker) {
   const selected = value.slice(selectionStart, selectionEnd)
   const newValue = value.slice(0, selectionStart) + marker + selected + marker + value.slice(selectionEnd)
@@ -5,6 +15,21 @@ export function wrapSelection(value, selectionStart, selectionEnd, marker) {
     newValue,
     newSelectionStart: selectionStart + marker.length,
     newSelectionEnd: selectionEnd + marker.length,
+  }
+}
+
+export function toggleBlockquote(value, selectionStart, selectionEnd) {
+  const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+  const rawEnd = value.indexOf('\n', selectionStart)
+  const lineEnd = rawEnd === -1 ? value.length : rawEnd
+  const line = value.slice(lineStart, lineEnd)
+
+  if (line.startsWith('>')) return { newValue: value, newSelectionStart: selectionStart, newSelectionEnd: selectionEnd }
+
+  return {
+    newValue: value.slice(0, lineStart) + '> ' + line + value.slice(lineEnd),
+    newSelectionStart: selectionStart + 2,
+    newSelectionEnd: selectionEnd + 2,
   }
 }
 

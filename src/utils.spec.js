@@ -1,4 +1,31 @@
-import { wrapSelection, cycleHeading } from './utils'
+import { insertSnippet, wrapSelection, toggleBlockquote, cycleHeading } from './utils'
+
+describe('insertSnippet', () => {
+  it('inserts snippet on a new line below the current line', () => {
+    expect(insertSnippet('hello\nworld', 2, '---').newValue).toBe('hello\n---\nworld')
+  })
+
+  it('appends snippet at the end when cursor is on the last line', () => {
+    expect(insertSnippet('hello', 2, '---').newValue).toBe('hello\n---')
+  })
+
+  it('works on an empty string', () => {
+    expect(insertSnippet('', 0, '---').newValue).toBe('\n---')
+  })
+
+  it('places cursor at the end of the inserted snippet', () => {
+    expect(insertSnippet('hello', 0, '---').newCursorPos).toBe(9)
+  })
+
+  it('inserts below the line even when cursor is at line start', () => {
+    expect(insertSnippet('abc\ndef', 0, '---').newValue).toBe('abc\n---\ndef')
+  })
+
+  it('inserts multi-line snippets correctly', () => {
+    const { newValue } = insertSnippet('title', 0, '- a\n- b')
+    expect(newValue).toBe('title\n- a\n- b')
+  })
+})
 
 describe('wrapSelection', () => {
   it('wraps selected text with the given marker', () => {
@@ -35,6 +62,42 @@ describe('wrapSelection', () => {
 
   it('works with == marker (highlight)', () => {
     expect(wrapSelection('mark this', 5, 9, '==').newValue).toBe('mark ==this==')
+  })
+})
+
+describe('toggleBlockquote', () => {
+  it('prepends "> " to a plain line', () => {
+    expect(toggleBlockquote('foo', 0, 0).newValue).toBe('> foo')
+  })
+
+  it('does nothing if the line already starts with >', () => {
+    expect(toggleBlockquote('> foo', 0, 0).newValue).toBe('> foo')
+  })
+
+  it('only affects the line containing the cursor in multi-line text', () => {
+    const text = 'first\nsecond\nthird'
+    expect(toggleBlockquote(text, 6, 6).newValue).toBe('first\n> second\nthird')
+  })
+
+  it('does not affect surrounding lines', () => {
+    const text = 'before\ntarget\nafter'
+    expect(toggleBlockquote(text, 7, 7).newValue).toBe('before\n> target\nafter')
+  })
+
+  it('shifts cursor forward by 2 when prefix is added', () => {
+    const { newSelectionStart, newSelectionEnd } = toggleBlockquote('foo', 1, 3)
+    expect(newSelectionStart).toBe(3)
+    expect(newSelectionEnd).toBe(5)
+  })
+
+  it('leaves cursor unchanged when line already starts with >', () => {
+    const { newSelectionStart, newSelectionEnd } = toggleBlockquote('> foo', 2, 4)
+    expect(newSelectionStart).toBe(2)
+    expect(newSelectionEnd).toBe(4)
+  })
+
+  it('handles an empty line', () => {
+    expect(toggleBlockquote('', 0, 0).newValue).toBe('> ')
   })
 })
 

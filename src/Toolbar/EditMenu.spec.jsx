@@ -65,6 +65,32 @@ describe('EditMenu', () => {
     expect(screen.getByText('-')).toBeInTheDocument()
   })
 
+  describe('Blockquote action', () => {
+    it('prepends "> " to the current line and calls onTextChange', () => {
+      const onTextChange = jest.fn()
+      const ref = { current: { value: 'foo', selectionStart: 0, selectionEnd: 0, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('Blockquote').closest('li'))
+      expect(onTextChange).toHaveBeenCalledWith('> foo')
+    })
+
+    it('does not modify value when line already starts with >', () => {
+      const onTextChange = jest.fn()
+      const ref = { current: { value: '> foo', selectionStart: 0, selectionEnd: 0, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('Blockquote').closest('li'))
+      expect(onTextChange).toHaveBeenCalledWith('> foo')
+    })
+
+    it('restores focus and shifts cursor after adding blockquote', () => {
+      const ref = { current: { value: 'foo', selectionStart: 1, selectionEnd: 1, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={() => {}} />)
+      fireEvent.click(screen.getByText('Blockquote').closest('li'))
+      expect(ref.current.focus).toHaveBeenCalled()
+      expect(ref.current.setSelectionRange).toHaveBeenCalledWith(3, 3)
+    })
+  })
+
   describe('Heading action (component)', () => {
     it('applies cycleHeading and calls onTextChange', () => {
       const onTextChange = jest.fn()
