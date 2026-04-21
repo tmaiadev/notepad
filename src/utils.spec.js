@@ -1,4 +1,42 @@
-import { cycleHeading } from './utils'
+import { wrapSelection, cycleHeading } from './utils'
+
+describe('wrapSelection', () => {
+  it('wraps selected text with the given marker', () => {
+    expect(wrapSelection('hello world', 6, 11, '**').newValue).toBe('hello **world**')
+  })
+
+  it('wraps with single-char marker (italic)', () => {
+    expect(wrapSelection('foo', 0, 3, '*').newValue).toBe('*foo*')
+  })
+
+  it('wraps an empty selection (no text selected)', () => {
+    expect(wrapSelection('foo', 1, 1, '**').newValue).toBe('f****oo')
+  })
+
+  it('places cursor inside markers when selection is empty', () => {
+    const { newSelectionStart, newSelectionEnd } = wrapSelection('foo', 1, 1, '**')
+    expect(newSelectionStart).toBe(3)
+    expect(newSelectionEnd).toBe(3)
+  })
+
+  it('keeps selection spanning the original text after wrapping', () => {
+    const { newSelectionStart, newSelectionEnd } = wrapSelection('hello world', 6, 11, '**')
+    expect(newSelectionStart).toBe(8)
+    expect(newSelectionEnd).toBe(13)
+  })
+
+  it('works at the start of the string', () => {
+    expect(wrapSelection('foo', 0, 3, '~~').newValue).toBe('~~foo~~')
+  })
+
+  it('works at the end of the string', () => {
+    expect(wrapSelection('foo', 3, 3, '`').newValue).toBe('foo``')
+  })
+
+  it('works with == marker (highlight)', () => {
+    expect(wrapSelection('mark this', 5, 9, '==').newValue).toBe('mark ==this==')
+  })
+})
 
 describe('cycleHeading', () => {
   describe('heading level cycling', () => {

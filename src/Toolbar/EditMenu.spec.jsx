@@ -42,7 +42,6 @@ describe('EditMenu', () => {
     expect(screen.getByText('Bold')).toBeInTheDocument()
     expect(screen.getByText('Italic')).toBeInTheDocument()
     expect(screen.getByText('Strikethrough')).toBeInTheDocument()
-    expect(screen.getByText('Highlight')).toBeInTheDocument()
     expect(screen.getByText('Blockquote')).toBeInTheDocument()
     expect(screen.getByText('Undo')).toBeInTheDocument()
     expect(screen.getByText('Redo')).toBeInTheDocument()
@@ -81,6 +80,29 @@ describe('EditMenu', () => {
       fireEvent.click(screen.getByText('Heading').closest('li'))
       expect(ref.current.focus).toHaveBeenCalled()
       expect(ref.current.setSelectionRange).toHaveBeenCalledWith(3, 3)
+    })
+  })
+
+  describe.each([
+    ['Bold', 'bold', '**'],
+    ['Italic', 'italic', '*'],
+    ['Strikethrough', 'strikethrough', '~~'],
+    ['Code', 'code', '`'],
+  ])('%s action', (label, _id, marker) => {
+    it(`wraps selected text with ${marker}`, () => {
+      const onTextChange = jest.fn()
+      const ref = { current: { value: 'hello world', selectionStart: 6, selectionEnd: 11, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText(label).closest('li'))
+      expect(onTextChange).toHaveBeenCalledWith(`hello ${marker}world${marker}`)
+    })
+
+    it('restores focus and selection after wrapping', () => {
+      const ref = { current: { value: 'hello world', selectionStart: 6, selectionEnd: 11, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={() => {}} />)
+      fireEvent.click(screen.getByText(label).closest('li'))
+      expect(ref.current.focus).toHaveBeenCalled()
+      expect(ref.current.setSelectionRange).toHaveBeenCalledWith(6 + marker.length, 11 + marker.length)
     })
   })
 

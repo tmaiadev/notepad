@@ -1,5 +1,5 @@
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
-import { cycleHeading } from '../utils'
+import { cycleHeading, wrapSelection } from '../utils'
 
 function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
   async function handleAction(id) {
@@ -27,6 +27,15 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
       requestAnimationFrame(() => {
         textarea.focus()
         textarea.setSelectionRange(selectionStart + clip.length, selectionStart + clip.length)
+      })
+    } else if (id === 'bold' || id === 'italic' || id === 'strikethrough' || id === 'highlight' || id === 'code') {
+      const markers = { bold: '**', italic: '*', strikethrough: '~~', code: '`' }
+      const { selectionStart, selectionEnd, value } = textarea
+      const { newValue, newSelectionStart, newSelectionEnd } = wrapSelection(value, selectionStart, selectionEnd, markers[id])
+      onTextChange(newValue)
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
       })
     } else if (id === 'heading') {
       const { selectionStart, selectionEnd, value } = textarea
@@ -109,9 +118,6 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
               <Kbd.Abbr keyValue="command" />
               <Kbd.Content>-</Kbd.Content>
             </Kbd>
-          </Dropdown.Item>
-          <Dropdown.Item id="highlight" textValue="Highlight">
-            <Label>Highlight</Label>
           </Dropdown.Item>
           <Dropdown.Item id="blockquote" textValue="Blockquote">
             <Label>Blockquote</Label>

@@ -1,3 +1,13 @@
+export function wrapSelection(value, selectionStart, selectionEnd, marker) {
+  const selected = value.slice(selectionStart, selectionEnd)
+  const newValue = value.slice(0, selectionStart) + marker + selected + marker + value.slice(selectionEnd)
+  return {
+    newValue,
+    newSelectionStart: selectionStart + marker.length,
+    newSelectionEnd: selectionEnd + marker.length,
+  }
+}
+
 export function cycleHeading(value, selectionStart, selectionEnd) {
   const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
   const rawEnd = value.indexOf('\n', selectionStart)
