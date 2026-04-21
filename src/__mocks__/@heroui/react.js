@@ -67,6 +67,39 @@ export function Kbd({ children, slot: _slot, variant: _variant, ...props }) {
 Kbd.Abbr = KbdAbbr
 Kbd.Content = KbdContent
 
+// Table compound component
+function TableScrollContainer({ children, ...props }) {
+  return <div data-testid="Table.ScrollContainer" {...props}>{children}</div>
+}
+function TableContent({ children, ...props }) {
+  return <table data-testid="Table.Content" {...props}>{children}</table>
+}
+function TableHeader({ children, ...props }) {
+  return <thead data-testid="Table.Header" {...props}>{children}</thead>
+}
+function TableColumn({ children, ...props }) {
+  return <th data-testid="Table.Column" {...props}>{children}</th>
+}
+function TableBody({ children, ...props }) {
+  return <tbody data-testid="Table.Body" {...props}>{children}</tbody>
+}
+function TableRow({ children, ...props }) {
+  return <tr data-testid="Table.Row" {...props}>{children}</tr>
+}
+function TableCell({ children, ...props }) {
+  return <td data-testid="Table.Cell" {...props}>{children}</td>
+}
+export function Table({ children, ...props }) {
+  return <div data-testid="Table" {...props}>{children}</div>
+}
+Table.ScrollContainer = TableScrollContainer
+Table.Content = TableContent
+Table.Header = TableHeader
+Table.Column = TableColumn
+Table.Body = TableBody
+Table.Row = TableRow
+Table.Cell = TableCell
+
 // Label
 export function Label({ children, ...props }) {
   return <span data-testid="Label" {...props}>{children}</span>
