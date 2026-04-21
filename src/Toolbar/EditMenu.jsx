@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
 import { cycleHeading, toggleBlockquote, wrapSelection } from '../utils'
 
@@ -56,6 +57,38 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
     }
   }
 
+  const handleActionRef = useRef(null)
+  handleActionRef.current = handleAction
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod) return
+      const key = e.key.toLowerCase()
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('undo')
+      } else if (key === 'z' && e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('redo')
+      } else if (key === 'h' && e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('heading')
+      } else if (key === 'b' && !e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('bold')
+      } else if (key === 'i' && !e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('italic')
+      } else if (key === 'x' && e.shiftKey) {
+        e.preventDefault()
+        handleActionRef.current('strikethrough')
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   return (
     <Dropdown>
       <Button size="sm" variant="ghost">Edit</Button>
@@ -103,6 +136,7 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
             <Label>Heading</Label>
             <Kbd className="ms-auto" slot="keyboard" variant="light">
               <Kbd.Abbr keyValue="command" />
+              <Kbd.Abbr keyValue="shift" />
               <Kbd.Content>H</Kbd.Content>
             </Kbd>
           </Dropdown.Item>
@@ -124,7 +158,8 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
             <Label>Strikethrough</Label>
             <Kbd className="ms-auto" slot="keyboard" variant="light">
               <Kbd.Abbr keyValue="command" />
-              <Kbd.Content>-</Kbd.Content>
+              <Kbd.Abbr keyValue="shift" />
+              <Kbd.Content>X</Kbd.Content>
             </Kbd>
           </Dropdown.Item>
           <Dropdown.Item id="blockquote" textValue="Blockquote">

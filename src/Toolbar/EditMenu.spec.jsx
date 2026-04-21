@@ -56,13 +56,75 @@ describe('EditMenu', () => {
   it('renders keyboard shortcuts', () => {
     render(<EditMenu />)
     expect(screen.getByText('C')).toBeInTheDocument()
-    expect(screen.getByText('X')).toBeInTheDocument()
+    expect(screen.getAllByText('X')).toHaveLength(2) // Cut (Cmd+X) and Strikethrough (Cmd+Shift+X)
     expect(screen.getByText('V')).toBeInTheDocument()
     expect(screen.getAllByText('Z')).toHaveLength(2)
     expect(screen.getByText('H')).toBeInTheDocument()
     expect(screen.getByText('B')).toBeInTheDocument()
     expect(screen.getByText('I')).toBeInTheDocument()
-    expect(screen.getByText('-')).toBeInTheDocument()
+    expect(screen.queryByText('-')).not.toBeInTheDocument()
+  })
+
+  describe('keyboard shortcuts', () => {
+    it('Cmd+Z calls onUndo', () => {
+      const onUndo = jest.fn()
+      render(<EditMenu onUndo={onUndo} />)
+      fireEvent.keyDown(document, { key: 'z', metaKey: true })
+      expect(onUndo).toHaveBeenCalled()
+    })
+
+    it('Ctrl+Z calls onUndo (Windows/Linux)', () => {
+      const onUndo = jest.fn()
+      render(<EditMenu onUndo={onUndo} />)
+      fireEvent.keyDown(document, { key: 'z', ctrlKey: true })
+      expect(onUndo).toHaveBeenCalled()
+    })
+
+    it('Cmd+Shift+Z calls onRedo', () => {
+      const onRedo = jest.fn()
+      render(<EditMenu onRedo={onRedo} />)
+      fireEvent.keyDown(document, { key: 'Z', metaKey: true, shiftKey: true })
+      expect(onRedo).toHaveBeenCalled()
+    })
+
+    it('Cmd+B wraps selected text with **', () => {
+      const onTextChange = jest.fn()
+      const ref = makeTextareaRef('hello world', 6, 11)
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.keyDown(document, { key: 'b', metaKey: true })
+      expect(onTextChange).toHaveBeenCalledWith('hello **world**')
+    })
+
+    it('Cmd+I wraps selected text with *', () => {
+      const onTextChange = jest.fn()
+      const ref = makeTextareaRef('hello world', 6, 11)
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.keyDown(document, { key: 'i', metaKey: true })
+      expect(onTextChange).toHaveBeenCalledWith('hello *world*')
+    })
+
+    it('Cmd+Shift+X wraps selected text with ~~', () => {
+      const onTextChange = jest.fn()
+      const ref = makeTextareaRef('hello world', 6, 11)
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.keyDown(document, { key: 'X', metaKey: true, shiftKey: true })
+      expect(onTextChange).toHaveBeenCalledWith('hello ~~world~~')
+    })
+
+    it('Cmd+Shift+H cycles heading on current line', () => {
+      const onTextChange = jest.fn()
+      const ref = { current: { value: 'foo', selectionStart: 0, selectionEnd: 0, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.keyDown(document, { key: 'H', metaKey: true, shiftKey: true })
+      expect(onTextChange).toHaveBeenCalledWith('# foo')
+    })
+
+    it('ignores keypresses without modifier key', () => {
+      const onUndo = jest.fn()
+      render(<EditMenu onUndo={onUndo} />)
+      fireEvent.keyDown(document, { key: 'z' })
+      expect(onUndo).not.toHaveBeenCalled()
+    })
   })
 
   describe('Blockquote action', () => {

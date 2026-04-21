@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AlertDialog, Button, Dropdown, Kbd, Label } from '@heroui/react'
 
 const fileTypes = [
@@ -114,6 +114,26 @@ function FileMenu({ text, onTextChange }) {
     if (id === 'save-as') handleSaveAs()
   }
 
+  const handlersRef = useRef(null)
+  handlersRef.current = { handleSave, handleSaveAs }
+
+  useEffect(() => {
+    function onKeyDown(e) {
+      const mod = e.metaKey || e.ctrlKey
+      if (!mod) return
+      const key = e.key.toLowerCase()
+      if (key === 's' && !e.shiftKey) {
+        e.preventDefault()
+        handlersRef.current.handleSave()
+      } else if (key === 's' && e.shiftKey) {
+        e.preventDefault()
+        handlersRef.current.handleSaveAs()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
   return (
     <>
       <Dropdown>
@@ -122,17 +142,9 @@ function FileMenu({ text, onTextChange }) {
           <Dropdown.Menu onAction={handleAction}>
             <Dropdown.Item id="new" textValue="New">
               <Label>New</Label>
-              <Kbd className="ms-auto" slot="keyboard" variant="light">
-                <Kbd.Abbr keyValue="command" />
-                <Kbd.Content>N</Kbd.Content>
-              </Kbd>
             </Dropdown.Item>
             <Dropdown.Item id="open" textValue="Open">
               <Label>Open</Label>
-              <Kbd className="ms-auto" slot="keyboard" variant="light">
-                <Kbd.Abbr keyValue="command" />
-                <Kbd.Content>O</Kbd.Content>
-              </Kbd>
             </Dropdown.Item>
             <Dropdown.Item id="save" textValue="Save">
               <Label>Save</Label>

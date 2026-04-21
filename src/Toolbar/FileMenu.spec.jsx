@@ -68,12 +68,11 @@ describe('FileMenu', () => {
     expect(screen.getByText('Save As')).toBeInTheDocument()
   })
 
-  it('renders keyboard shortcuts', () => {
+  it('renders keyboard shortcuts only for Save and Save As', () => {
     render(<FileMenu {...defaultProps} />)
-    expect(screen.getByText('N')).toBeInTheDocument()
-    expect(screen.getByText('O')).toBeInTheDocument()
-    const sKeys = screen.getAllByText('S')
-    expect(sKeys.length).toBe(2)
+    expect(screen.queryByText('N')).not.toBeInTheDocument()
+    expect(screen.queryByText('O')).not.toBeInTheDocument()
+    expect(screen.getAllByText('S')).toHaveLength(2)
   })
 
   it('renders shift modifier for Save As', () => {
@@ -81,6 +80,32 @@ describe('FileMenu', () => {
     const abbrs = screen.getAllByTestId('Kbd.Abbr')
     const shiftAbbr = abbrs.find(el => el.getAttribute('data-key') === 'shift')
     expect(shiftAbbr).toBeTruthy()
+  })
+
+  describe('keyboard shortcuts', () => {
+    it('Cmd+S triggers save', async () => {
+      const { clickSpy } = setupFallbackMocks()
+      render(<FileMenu text="my content" onTextChange={jest.fn()} />)
+      fireEvent.keyDown(document, { key: 's', metaKey: true })
+      await flush()
+      expect(clickSpy).toHaveBeenCalled()
+    })
+
+    it('Ctrl+S triggers save (Windows/Linux)', async () => {
+      const { clickSpy } = setupFallbackMocks()
+      render(<FileMenu text="my content" onTextChange={jest.fn()} />)
+      fireEvent.keyDown(document, { key: 's', ctrlKey: true })
+      await flush()
+      expect(clickSpy).toHaveBeenCalled()
+    })
+
+    it('Cmd+Shift+S triggers save as', async () => {
+      const { clickSpy } = setupFallbackMocks()
+      render(<FileMenu text="my content" onTextChange={jest.fn()} />)
+      fireEvent.keyDown(document, { key: 'S', metaKey: true, shiftKey: true })
+      await flush()
+      expect(clickSpy).toHaveBeenCalled()
+    })
   })
 
   describe('New action', () => {
