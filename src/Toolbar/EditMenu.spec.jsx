@@ -66,6 +66,24 @@ describe('EditMenu', () => {
     expect(screen.getByText('-')).toBeInTheDocument()
   })
 
+  describe('Heading action (component)', () => {
+    it('applies cycleHeading and calls onTextChange', () => {
+      const onTextChange = jest.fn()
+      const ref = { current: { value: 'foo', selectionStart: 0, selectionEnd: 0, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={onTextChange} />)
+      fireEvent.click(screen.getByText('Heading').closest('li'))
+      expect(onTextChange).toHaveBeenCalledWith('# foo')
+    })
+
+    it('restores focus and cursor after heading change', () => {
+      const ref = { current: { value: '# foo', selectionStart: 2, selectionEnd: 2, focus: jest.fn(), setSelectionRange: jest.fn() } }
+      render(<EditMenu textareaRef={ref} onTextChange={() => {}} />)
+      fireEvent.click(screen.getByText('Heading').closest('li'))
+      expect(ref.current.focus).toHaveBeenCalled()
+      expect(ref.current.setSelectionRange).toHaveBeenCalledWith(3, 3)
+    })
+  })
+
   describe('Undo action', () => {
     it('calls onUndo when Undo is clicked', () => {
       const onUndo = jest.fn()

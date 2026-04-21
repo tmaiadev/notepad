@@ -1,4 +1,5 @@
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
+import { cycleHeading } from '../utils'
 
 function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
   async function handleAction(id) {
@@ -26,6 +27,14 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
       requestAnimationFrame(() => {
         textarea.focus()
         textarea.setSelectionRange(selectionStart + clip.length, selectionStart + clip.length)
+      })
+    } else if (id === 'heading') {
+      const { selectionStart, selectionEnd, value } = textarea
+      const { newValue, newSelectionStart, newSelectionEnd } = cycleHeading(value, selectionStart, selectionEnd)
+      onTextChange(newValue)
+      requestAnimationFrame(() => {
+        textarea.focus()
+        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
       })
     }
   }
