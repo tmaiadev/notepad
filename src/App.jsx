@@ -1,5 +1,7 @@
+import { Button } from '@heroui/react'
+
 function App() {
-  return <h1>hello world</h1>
+  return <Button>hello world</Button>
 }
 
 export default App
