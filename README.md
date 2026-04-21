@@ -1,18 +1,68 @@
-# React + Vite
+# Notepad
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight, browser-based Markdown notepad with a classic desktop feel. Write in plain text or Markdown, preview the rendered output, and save files directly to your local filesystem.
 
-Currently, two official plugins are available:
+## Getting Started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Prerequisites
 
-## React Compiler
+- [Node.js](https://nodejs.org/) 18+
+- [pnpm](https://pnpm.io/) (or npm / yarn)
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+### Install dependencies
 
-Note: This will impact Vite dev & build performances.
+```bash
+pnpm install
+```
 
-## Expanding the ESLint configuration
+### Run the development server
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+pnpm dev
+```
+
+Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+### Build for production
+
+```bash
+pnpm build
+```
+
+The output is written to `dist/`. Serve it with any static file server:
+
+```bash
+pnpm preview
+```
+
+### Run tests
+
+```bash
+pnpm test
+```
+
+## Tech Stack
+
+- [React 19](https://react.dev/)
+- [Vite](https://vite.dev/)
+- [HeroUI](https://heroui.com/)
+- [Tailwind CSS v4](https://tailwindcss.com/)
+- [marked](https://marked.js.org/) — Markdown parsing
+
+## License
+
+Notepad — a lightweight browser-based Markdown notepad.
+Copyright (C) 2026  Thalles Maia
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
