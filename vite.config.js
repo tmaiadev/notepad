@@ -16,7 +16,7 @@ export default defineConfig({
         name: 'Notepad by TMaiaDev',
         short_name: 'Notepad',
         description: 'A simple notepad with offline support',
-        theme_color: '#863bff',
+        theme_color: '#0071e3',
         background_color: '#ffffff',
         display: 'standalone',
         icons: [
@@ -35,7 +35,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png}'],
+        globPatterns: ['**/*.{js,css,html}'],
       },
     }),
   ],
