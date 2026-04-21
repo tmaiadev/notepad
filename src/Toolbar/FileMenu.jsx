@@ -1,37 +1,62 @@
+import { useRef } from 'react'
 import { Button, Dropdown, Kbd, Label } from '@heroui/react'
 
-async function saveFile(text) {
-  if (typeof window.showSaveFilePicker === 'function') {
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'untitled.txt',
-      types: [
-        {
-          description: 'Text Files',
-          accept: { 'text/plain': ['.txt', '.md'] },
-        },
-      ],
-    })
-    const writable = await handle.createWritable()
-    await writable.write(text)
-    await writable.close()
-  } else {
-    const blob = new Blob([text], { type: 'text/plain' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'untitled.txt'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
+const pickerOpts = {
+  suggestedName: 'untitled.txt',
+  types: [
+    {
+      description: 'Text Files',
+      accept: { 'text/plain': ['.txt', '.md'] },
+    },
+  ],
+}
+
+async function writeToHandle(handle, text) {
+  const writable = await handle.createWritable()
+  await writable.write(text)
+  await writable.close()
+}
+
+function downloadFallback(text) {
+  const blob = new Blob([text], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'untitled.txt'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
 }
 
 function FileMenu({ text }) {
-  function handleAction(id) {
-    if (id === 'save') {
-      saveFile(text)
+  const fileHandleRef = useRef(null)
+
+  async function handleSave() {
+    if (fileHandleRef.current) {
+      await writeToHandle(fileHandleRef.current, text)
+    } else if (typeof window.showSaveFilePicker === 'function') {
+      const handle = await window.showSaveFilePicker(pickerOpts)
+      fileHandleRef.current = handle
+      await writeToHandle(handle, text)
+    } else {
+      downloadFallback(text)
     }
+  }
+
+  async function handleSaveAs() {
+    if (typeof window.showSaveFilePicker === 'function') {
+      const handle = await window.showSaveFilePicker(pickerOpts)
+      fileHandleRef.current = handle
+      await writeToHandle(handle, text)
+    } else {
+      downloadFallback(text)
+    }
+  }
+
+  function handleAction(id) {
+    if (id === 'save') handleSave()
+    if (id === 'save-as') handleSaveAs()
   }
 
   return (
