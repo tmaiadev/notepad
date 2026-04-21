@@ -28,6 +28,22 @@ function EditMenu() {
             </Kbd>
           </Dropdown.Item>
           <Separator />
+          <Dropdown.Item id="undo" textValue="Undo">
+            <Label>Undo</Label>
+            <Kbd className="ms-auto" slot="keyboard" variant="light">
+              <Kbd.Abbr keyValue="command" />
+              <Kbd.Content>Z</Kbd.Content>
+            </Kbd>
+          </Dropdown.Item>
+          <Dropdown.Item id="redo" textValue="Redo">
+            <Label>Redo</Label>
+            <Kbd className="ms-auto" slot="keyboard" variant="light">
+              <Kbd.Abbr keyValue="command" />
+              <Kbd.Abbr keyValue="shift" />
+              <Kbd.Content>Z</Kbd.Content>
+            </Kbd>
+          </Dropdown.Item>
+          <Separator />
           <Dropdown.Item id="heading" textValue="Heading">
             <Label>Heading</Label>
             <Kbd className="ms-auto" slot="keyboard" variant="light">

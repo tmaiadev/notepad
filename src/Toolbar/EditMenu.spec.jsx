@@ -14,12 +14,14 @@ describe('EditMenu', () => {
     expect(screen.getByText('Strikethrough')).toBeInTheDocument()
     expect(screen.getByText('Highlight')).toBeInTheDocument()
     expect(screen.getByText('Blockquote')).toBeInTheDocument()
+    expect(screen.getByText('Undo')).toBeInTheDocument()
+    expect(screen.getByText('Redo')).toBeInTheDocument()
     expect(screen.getByText('Code')).toBeInTheDocument()
   })
 
-  it('renders Separator between clipboard and formatting groups', () => {
+  it('renders Separators between menu groups', () => {
     render(<EditMenu />)
-    expect(screen.getByTestId('Separator')).toBeInTheDocument()
+    expect(screen.getAllByTestId('Separator')).toHaveLength(2)
   })
 
   it('renders keyboard shortcuts', () => {
@@ -27,6 +29,7 @@ describe('EditMenu', () => {
     expect(screen.getByText('C')).toBeInTheDocument()
     expect(screen.getByText('X')).toBeInTheDocument()
     expect(screen.getByText('V')).toBeInTheDocument()
+    expect(screen.getAllByText('Z')).toHaveLength(2)
     expect(screen.getByText('H')).toBeInTheDocument()
     expect(screen.getByText('B')).toBeInTheDocument()
     expect(screen.getByText('I')).toBeInTheDocument()
