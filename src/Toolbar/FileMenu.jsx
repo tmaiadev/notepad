@@ -115,7 +115,7 @@ function FileMenu({ text, onTextChange }) {
   }
 
   const handlersRef = useRef(null)
-  handlersRef.current = { handleSave, handleSaveAs }
+  useEffect(() => { handlersRef.current = { handleSave, handleSaveAs } })
 
   useEffect(() => {
     function onKeyDown(e) {

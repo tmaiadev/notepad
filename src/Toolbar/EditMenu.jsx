@@ -58,7 +58,7 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
   }
 
   const handleActionRef = useRef(null)
-  handleActionRef.current = handleAction
+  useEffect(() => { handleActionRef.current = handleAction })
 
   useEffect(() => {
     function onKeyDown(e) {
