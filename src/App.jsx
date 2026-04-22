@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { marked } from 'marked'
 import Toolbar from './Toolbar'
+import { continueList } from './utils'
 
 function App() {
   const [text, setText] = useState(() => localStorage.getItem('notepad') ?? '')
@@ -26,6 +27,16 @@ function App() {
 
   function handleChange(e) {
     handleTextChange(e.target.value)
+  }
+
+  function handleKeyDown(e) {
+    if (e.key !== 'Enter') return
+    const textarea = textareaRef.current
+    const result = continueList(textarea.value, textarea.selectionStart, textarea.selectionEnd)
+    if (!result) return
+    e.preventDefault()
+    handleTextChange(result.newValue)
+    requestAnimationFrame(() => textarea.setSelectionRange(result.newCursorPos, result.newCursorPos))
   }
 
   function handleUndo() {
@@ -61,6 +72,7 @@ function App() {
           placeholder="Start typing..."
           value={text}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
         />
       ) : (
         <div

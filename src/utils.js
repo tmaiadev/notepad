@@ -33,6 +33,55 @@ export function toggleBlockquote(value, selectionStart, selectionEnd) {
   }
 }
 
+export function continueList(value, selectionStart, selectionEnd) {
+  const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+  const line = value.slice(lineStart, selectionStart)
+  const rawFullLineEnd = value.indexOf('\n', lineStart)
+  const fullLineEnd = rawFullLineEnd === -1 ? value.length : rawFullLineEnd
+
+  let matchedPrefix = null
+  let nextPrefix = null
+
+  const taskMatch = line.match(/^(\s*[-*+] \[[ x]\] )/)
+  if (taskMatch) {
+    matchedPrefix = taskMatch[1]
+    nextPrefix = matchedPrefix.replace(/\[[ x]\]/, '[ ]')
+  } else {
+    const appTaskMatch = line.match(/^(\s*\[[ x]\] )/)
+    if (appTaskMatch) {
+      matchedPrefix = appTaskMatch[1]
+      nextPrefix = matchedPrefix.replace(/\[[ x]\]/, '[ ]')
+    } else {
+      const orderedMatch = line.match(/^(\s*)(\d+)\. /)
+      if (orderedMatch) {
+        matchedPrefix = orderedMatch[0]
+        nextPrefix = orderedMatch[1] + (parseInt(orderedMatch[2]) + 1) + '. '
+      } else {
+        const unorderedMatch = line.match(/^(\s*[-*+] )/)
+        if (unorderedMatch) {
+          matchedPrefix = unorderedMatch[1]
+          nextPrefix = matchedPrefix
+        }
+      }
+    }
+  }
+
+  if (!nextPrefix) return null
+
+  // Empty list item — exit by removing the prefix, cursor stays on the now-empty line
+  if (fullLineEnd - lineStart === matchedPrefix.length) {
+    return {
+      newValue: value.slice(0, lineStart) + value.slice(lineStart + matchedPrefix.length),
+      newCursorPos: lineStart,
+    }
+  }
+
+  return {
+    newValue: value.slice(0, selectionStart) + '\n' + nextPrefix + value.slice(selectionEnd),
+    newCursorPos: selectionStart + 1 + nextPrefix.length,
+  }
+}
+
 export function cycleHeading(value, selectionStart, selectionEnd) {
   const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
   const rawEnd = value.indexOf('\n', selectionStart)

@@ -1,4 +1,153 @@
-import { insertSnippet, wrapSelection, toggleBlockquote, cycleHeading } from './utils'
+import { insertSnippet, wrapSelection, toggleBlockquote, cycleHeading, continueList } from './utils'
+
+describe('continueList', () => {
+  describe('task list (GFM: - [ ])', () => {
+    it('continues an unchecked task item', () => {
+      const text = '- [ ] buy milk'
+      const { newValue, newCursorPos } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('- [ ] buy milk\n- [ ] ')
+      expect(newCursorPos).toBe(newValue.length)
+    })
+
+    it('continues a checked task item as unchecked', () => {
+      const text = '- [x] done'
+      const { newValue } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('- [x] done\n- [ ] ')
+    })
+
+    it('works with * prefix', () => {
+      const { newValue } = continueList('* [ ] item', 10, 10)
+      expect(newValue).toBe('* [ ] item\n* [ ] ')
+    })
+  })
+
+  describe('app task format ([ ] without dash)', () => {
+    it('continues [ ] format', () => {
+      const text = '[ ] item'
+      const { newValue } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('[ ] item\n[ ] ')
+    })
+
+    it('continues [x] format as unchecked', () => {
+      const { newValue } = continueList('[x] done', 8, 8)
+      expect(newValue).toBe('[x] done\n[ ] ')
+    })
+  })
+
+  describe('unordered list', () => {
+    it('continues a dash list', () => {
+      const text = '- item'
+      const { newValue } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('- item\n- ')
+    })
+
+    it('continues an asterisk list', () => {
+      const { newValue } = continueList('* item', 6, 6)
+      expect(newValue).toBe('* item\n* ')
+    })
+
+    it('continues a plus list', () => {
+      const { newValue } = continueList('+ item', 6, 6)
+      expect(newValue).toBe('+ item\n+ ')
+    })
+
+    it('preserves indentation', () => {
+      const { newValue } = continueList('  - item', 8, 8)
+      expect(newValue).toBe('  - item\n  - ')
+    })
+  })
+
+  describe('ordered list', () => {
+    it('increments the number', () => {
+      const { newValue } = continueList('1. first', 8, 8)
+      expect(newValue).toBe('1. first\n2. ')
+    })
+
+    it('increments from any number', () => {
+      const { newValue } = continueList('5. fifth', 8, 8)
+      expect(newValue).toBe('5. fifth\n6. ')
+    })
+
+    it('preserves indentation', () => {
+      const { newValue } = continueList('  3. item', 9, 9)
+      expect(newValue).toBe('  3. item\n  4. ')
+    })
+  })
+
+  describe('empty list item (exit list)', () => {
+    it('removes unordered prefix when item is empty', () => {
+      const text = '- Item 1\n- '
+      const { newValue, newCursorPos } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('- Item 1\n')
+      expect(newCursorPos).toBe('- Item 1\n'.length)
+    })
+
+    it('removes task prefix when item is empty', () => {
+      const text = '- [x] Item 1\n- [ ] Item 2\n- [ ] '
+      const { newValue, newCursorPos } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('- [x] Item 1\n- [ ] Item 2\n')
+      expect(newCursorPos).toBe('- [x] Item 1\n- [ ] Item 2\n'.length)
+    })
+
+    it('removes ordered prefix when item is empty', () => {
+      const text = '1. Item 1\n2. '
+      const { newValue, newCursorPos } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('1. Item 1\n')
+      expect(newCursorPos).toBe('1. Item 1\n'.length)
+    })
+
+    it('removes app-format task prefix when item is empty', () => {
+      const { newValue } = continueList('[ ] Item 1\n[ ] ', 15, 15)
+      expect(newValue).toBe('[ ] Item 1\n')
+    })
+
+    it('does not exit when the item has content', () => {
+      const { newValue } = continueList('- item', 6, 6)
+      expect(newValue).toBe('- item\n- ')
+    })
+
+    it('does not exit when cursor is after prefix but line has trailing content', () => {
+      // cursor right after "- " but "text" still exists on the line
+      const { newValue } = continueList('- text', 2, 2)
+      expect(newValue).toBe('- \n- text')
+    })
+  })
+
+  describe('non-list lines', () => {
+    it('returns null for plain text', () => {
+      expect(continueList('just text', 9, 9)).toBeNull()
+    })
+
+    it('returns null for an empty string', () => {
+      expect(continueList('', 0, 0)).toBeNull()
+    })
+
+    it('returns null for a heading', () => {
+      expect(continueList('# heading', 9, 9)).toBeNull()
+    })
+  })
+
+  describe('multi-line text', () => {
+    it('detects the list from the current line only', () => {
+      const text = 'intro\n- item'
+      const { newValue } = continueList(text, text.length, text.length)
+      expect(newValue).toBe('intro\n- item\n- ')
+    })
+
+    it('inserts after selectionStart and removes selected text', () => {
+      const text = '- item text'
+      const { newValue, newCursorPos } = continueList(text, 7, 11)
+      expect(newValue).toBe('- item \n- ')
+      expect(newCursorPos).toBe('- item \n- '.length)
+    })
+
+    it('works on the first of many lines', () => {
+      const text = '- first\n- second'
+      const { newValue } = continueList(text, 7, 7)
+      expect(newValue).toBe('- first\n- \n- second')
+    })
+  })
+})
 
 describe('insertSnippet', () => {
   it('inserts snippet on a new line below the current line', () => {
