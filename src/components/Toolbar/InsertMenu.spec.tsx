@@ -1,28 +1,15 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import InsertMenu from './InsertMenu'
+import { screen, fireEvent } from '@testing-library/react'
+import { InsertMenu } from './InsertMenu'
+import { makeTextareaStub, renderWithEditor } from '../../test-utils'
 
-function makeRef(value = 'line one', selectionStart = 0) {
-  return {
-    current: {
-      value,
-      selectionStart,
-      focus: jest.fn(),
-      setSelectionRange: jest.fn(),
-    },
-  }
+function stubRef(value = 'hello', selectionStart = 0) {
+  const stub = makeTextareaStub(value, selectionStart, selectionStart)
+  return { current: stub as unknown as HTMLTextAreaElement } as React.RefObject<HTMLTextAreaElement | null>
 }
 
 describe('InsertMenu', () => {
-  beforeEach(() => {
-    jest.spyOn(global, 'requestAnimationFrame').mockImplementation(cb => { cb(); return 0 })
-  })
-
-  afterEach(() => {
-    global.requestAnimationFrame.mockRestore()
-  })
-
   it('renders "Insert" button and all top-level items', () => {
-    render(<InsertMenu />)
+    renderWithEditor(<InsertMenu />)
     expect(screen.getByText('Insert')).toBeInTheDocument()
     expect(screen.getByText('List')).toBeInTheDocument()
     expect(screen.getByText('Horizontal Rule')).toBeInTheDocument()
@@ -33,7 +20,7 @@ describe('InsertMenu', () => {
   })
 
   it('renders List submenu with sub-items', () => {
-    render(<InsertMenu />)
+    renderWithEditor(<InsertMenu />)
     expect(screen.getByText('Unordered')).toBeInTheDocument()
     expect(screen.getByText('Ordered')).toBeInTheDocument()
     expect(screen.getByText('Definition')).toBeInTheDocument()
@@ -41,7 +28,7 @@ describe('InsertMenu', () => {
   })
 
   it('renders SubmenuTrigger and SubmenuIndicator', () => {
-    render(<InsertMenu />)
+    renderWithEditor(<InsertMenu />)
     expect(screen.getByTestId('Dropdown.SubmenuTrigger')).toBeInTheDocument()
     expect(screen.getByTestId('Dropdown.SubmenuIndicator')).toBeInTheDocument()
   })
@@ -57,28 +44,29 @@ describe('InsertMenu', () => {
     ['Table', '| Column 1 | Column 2 |\n| -------- | -------- |\n| Cell     | Cell     |'],
     ['Fenced Code Block', '```\ncode here\n```'],
   ])('%s action', (label, snippet) => {
-    it('inserts snippet below the current line', () => {
-      const onTextChange = jest.fn()
-      const ref = makeRef('hello', 0)
-      render(<InsertMenu textareaRef={ref} onTextChange={onTextChange} />)
-      fireEvent.click(screen.getByText(label).closest('li'))
-      expect(onTextChange).toHaveBeenCalledWith('hello\n' + snippet)
-    })
-
-    it('restores focus and places cursor at end of snippet', () => {
-      const ref = makeRef('hello', 0)
-      render(<InsertMenu textareaRef={ref} onTextChange={() => {}} />)
-      fireEvent.click(screen.getByText(label).closest('li'))
-      expect(ref.current.focus).toHaveBeenCalled()
+    it('calls applyEdit with the snippet inserted below the current line', () => {
+      const textareaRef = stubRef('hello', 0)
+      const { editor } = renderWithEditor(<InsertMenu />, { textareaRef })
+      fireEvent.click(screen.getByText(label).closest('li')!)
       const expectedPos = 'hello'.length + 1 + snippet.length
-      expect(ref.current.setSelectionRange).toHaveBeenCalledWith(expectedPos, expectedPos)
+      expect(editor.applyEdit).toHaveBeenCalledWith({
+        newValue: 'hello\n' + snippet,
+        newCursorPos: expectedPos,
+      })
     })
   })
 
   it('does nothing when textareaRef has no current', () => {
-    const onTextChange = jest.fn()
-    render(<InsertMenu textareaRef={{ current: null }} onTextChange={onTextChange} />)
-    fireEvent.click(screen.getByText('Horizontal Rule').closest('li'))
-    expect(onTextChange).not.toHaveBeenCalled()
+    const textareaRef = { current: null } as React.RefObject<HTMLTextAreaElement | null>
+    const { editor } = renderWithEditor(<InsertMenu />, { textareaRef })
+    fireEvent.click(screen.getByText('Horizontal Rule').closest('li')!)
+    expect(editor.applyEdit).not.toHaveBeenCalled()
+  })
+
+  it('does nothing when item id is not a valid snippet', () => {
+    const textareaRef = stubRef('hello', 0)
+    const { editor } = renderWithEditor(<InsertMenu />, { textareaRef })
+    fireEvent.click(screen.getByText('List').closest('li')!)
+    expect(editor.applyEdit).not.toHaveBeenCalled()
   })
 })

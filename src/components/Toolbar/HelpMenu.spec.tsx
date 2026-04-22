@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import HelpMenu from './HelpMenu'
+import { HelpMenu } from './HelpMenu'
 
 describe('HelpMenu', () => {
   it('renders "Help" button and both menu items', () => {
@@ -11,11 +11,11 @@ describe('HelpMenu', () => {
 
   describe('Source Code action', () => {
     it('opens the source code URL in a new tab', () => {
-      jest.spyOn(window, 'open').mockImplementation(() => {})
+      const openSpy = jest.spyOn(window, 'open').mockImplementation(() => null)
       render(<HelpMenu />)
-      fireEvent.click(screen.getByText('Source Code').closest('li'))
-      expect(window.open).toHaveBeenCalledWith('https://github.com/tmaiadev/notepad', '_blank')
-      window.open.mockRestore()
+      fireEvent.click(screen.getByText('Source Code').closest('li')!)
+      expect(openSpy).toHaveBeenCalledWith('https://github.com/tmaiadev/notepad', '_blank')
+      openSpy.mockRestore()
     })
   })
 
@@ -23,19 +23,19 @@ describe('HelpMenu', () => {
     it('opens modal when Cheat Sheet is clicked', () => {
       render(<HelpMenu />)
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-      fireEvent.click(screen.getByText('Cheat Sheet').closest('li'))
+      fireEvent.click(screen.getByText('Cheat Sheet').closest('li')!)
       expect(screen.getByRole('dialog')).toBeInTheDocument()
     })
 
     it('displays the Cheat Sheet heading', () => {
       render(<HelpMenu />)
-      fireEvent.click(screen.getByText('Cheat Sheet').closest('li'))
+      fireEvent.click(screen.getByText('Cheat Sheet').closest('li')!)
       expect(screen.getByText('Cheat Sheet', { selector: 'h2' })).toBeInTheDocument()
     })
 
     it('renders all cheat sheet features in the table', () => {
       render(<HelpMenu />)
-      fireEvent.click(screen.getByText('Cheat Sheet').closest('li'))
+      fireEvent.click(screen.getByText('Cheat Sheet').closest('li')!)
       const features = [
         'Heading 1', 'Heading 2', 'Heading 3',
         'Bold', 'Italic', 'Strikethrough',
@@ -50,7 +50,7 @@ describe('HelpMenu', () => {
 
     it('closes modal when Close button is clicked', () => {
       render(<HelpMenu />)
-      fireEvent.click(screen.getByText('Cheat Sheet').closest('li'))
+      fireEvent.click(screen.getByText('Cheat Sheet').closest('li')!)
       expect(screen.getByRole('dialog')).toBeInTheDocument()
       fireEvent.click(screen.getByText('Close'))
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

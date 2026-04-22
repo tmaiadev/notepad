@@ -1,32 +1,20 @@
 import { Button, Dropdown, Label } from '@heroui/react'
-import { insertSnippet } from '../utils'
+import { useEditor } from '../../context/useEditor'
+import { insertSnippet } from '../../lib/markdown'
+import { SNIPPETS, type SnippetId } from '../../lib/snippets'
 
-const SNIPPETS = {
-  unordered: '- Item 1\n- Item 2',
-  ordered: '1. Item 1\n2. Item 2',
-  definition: 'Term\n: Definition',
-  task: '[ ] Item 1\n[x] Item 2',
-  'horizontal-rule': '---',
-  link: '[link text](url)',
-  image: '![alt text](url)',
-  table: '| Column 1 | Column 2 |\n| -------- | -------- |\n| Cell     | Cell     |',
-  'fenced-code-block': '```\ncode here\n```',
+function isSnippetId(key: string | number): key is SnippetId {
+  return typeof key === 'string' && key in SNIPPETS
 }
 
-function InsertMenu({ textareaRef, onTextChange }) {
-  function handleAction(id) {
-    const snippet = SNIPPETS[id]
-    if (!snippet) return
+export function InsertMenu() {
+  const { textareaRef, applyEdit } = useEditor()
 
-    const textarea = textareaRef?.current
+  function handleAction(key: string | number) {
+    if (!isSnippetId(key)) return
+    const textarea = textareaRef.current
     if (!textarea) return
-
-    const { newValue, newCursorPos } = insertSnippet(textarea.value, textarea.selectionStart, snippet)
-    onTextChange(newValue)
-    requestAnimationFrame(() => {
-      textarea.focus()
-      textarea.setSelectionRange(newCursorPos, newCursorPos)
-    })
+    applyEdit(insertSnippet(textarea.value, textarea.selectionStart, SNIPPETS[key]))
   }
 
   return (
@@ -76,5 +64,3 @@ function InsertMenu({ textareaRef, onTextChange }) {
     </Dropdown>
   )
 }
-
-export default InsertMenu

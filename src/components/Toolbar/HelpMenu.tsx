@@ -1,32 +1,15 @@
 import { useState } from 'react'
 import { AlertDialog, Button, Dropdown, Label, Table } from '@heroui/react'
+import { CHEAT_SHEET } from '../../lib/snippets'
 
-const CHEAT_SHEET = [
-  { feature: 'Heading 1',       usage: ['# heading 1'] },
-  { feature: 'Heading 2',       usage: ['## heading 2'] },
-  { feature: 'Heading 3',       usage: ['### heading 3'] },
-  { feature: 'Bold',            usage: ['**bold**'] },
-  { feature: 'Italic',          usage: ['*italic*'] },
-  { feature: 'Strikethrough',   usage: ['~~strikethrough~~'] },
-  { feature: 'Blockquote',      usage: ['> blockquote'] },
-  { feature: 'Ordered List',    usage: ['1. Item 1', '2. Item 2'] },
-  { feature: 'Unordered List',  usage: ['- Item 1', '- Item 2'] },
-  { feature: 'Task List',       usage: ['- [ ] Task 1', '- [x] Task 2'] },
-  { feature: 'Code',            usage: ['`code`'] },
-  { feature: 'Code Block',      usage: ['```', 'code block', '```'] },
-  { feature: 'Horizontal Rule', usage: ['---'] },
-  { feature: 'Link',            usage: ['[title](https://www.example.com)'] },
-  { feature: 'Image',           usage: ['![alt text](https://url.com/image.jpg)'] },
-  { feature: 'Table',           usage: ['| Col 1 | Col 2 |', '| ----- | ----- |', '| Cell  | Cell  |'] },
-  { feature: 'Footnote',        usage: ["Here's a sentence[^1]", '[^1]: Footnote text'] },
-]
+const SOURCE_URL = 'https://github.com/tmaiadev/notepad'
 
-function HelpMenu() {
+export function HelpMenu() {
   const [showCheatSheet, setShowCheatSheet] = useState(false)
 
-  function handleAction(id) {
-    if (id === 'cheat-sheet') setShowCheatSheet(true)
-    if (id === 'source-code') window.open('https://github.com/tmaiadev/notepad', '_blank')
+  function handleAction(key: string | number) {
+    if (key === 'cheat-sheet') setShowCheatSheet(true)
+    if (key === 'source-code') window.open(SOURCE_URL, '_blank')
   }
 
   return (
@@ -86,5 +69,3 @@ function HelpMenu() {
     </>
   )
 }
-
-export default HelpMenu

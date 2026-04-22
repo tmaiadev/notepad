@@ -1,93 +1,95 @@
-import { useEffect, useRef } from 'react'
 import { Button, Dropdown, Kbd, Label, Separator } from '@heroui/react'
-import { cycleHeading, toggleBlockquote, wrapSelection } from '../utils'
+import { useEditor } from '../../context/useEditor'
+import { useHotkeys } from '../../hooks/useHotkeys'
+import { cycleHeading, toggleBlockquote, wrapSelection } from '../../lib/markdown'
 
-function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
-  async function handleAction(id) {
-    if (id === 'undo') { onUndo?.(); return }
-    if (id === 'redo') { onRedo?.(); return }
+type WrapMarker = 'bold' | 'italic' | 'strikethrough' | 'code'
+type EditAction =
+  | 'copy' | 'cut' | 'paste'
+  | 'undo' | 'redo'
+  | 'heading' | 'blockquote'
+  | WrapMarker
 
-    const textarea = textareaRef?.current
+const WRAP_MARKERS: Record<WrapMarker, string> = {
+  bold: '**',
+  italic: '*',
+  strikethrough: '~~',
+  code: '`',
+}
+
+const ALL_EDIT_ACTIONS: readonly EditAction[] = [
+  'copy', 'cut', 'paste', 'undo', 'redo', 'heading', 'blockquote',
+  'bold', 'italic', 'strikethrough', 'code',
+]
+
+function isEditAction(key: string | number): key is EditAction {
+  return typeof key === 'string' && (ALL_EDIT_ACTIONS as readonly string[]).includes(key)
+}
+
+function isWrapMarker(id: EditAction): id is WrapMarker {
+  return id === 'bold' || id === 'italic' || id === 'strikethrough' || id === 'code'
+}
+
+export function EditMenu() {
+  const { textareaRef, applyEdit, undo, redo } = useEditor()
+
+  async function handleAction(key: string | number) {
+    if (!isEditAction(key)) return
+    const id: EditAction = key
+    if (id === 'undo') { undo(); return }
+    if (id === 'redo') { redo(); return }
+
+    const textarea = textareaRef.current
     if (!textarea) return
 
+    const { selectionStart, selectionEnd, value } = textarea
+
     if (id === 'copy') {
-      const selected = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd)
-      await navigator.clipboard.writeText(selected)
-    } else if (id === 'cut') {
-      const { selectionStart, selectionEnd, value } = textarea
       await navigator.clipboard.writeText(value.slice(selectionStart, selectionEnd))
-      onTextChange(value.slice(0, selectionStart) + value.slice(selectionEnd))
-      requestAnimationFrame(() => {
-        textarea.focus()
-        textarea.setSelectionRange(selectionStart, selectionStart)
+      return
+    }
+
+    if (id === 'cut') {
+      await navigator.clipboard.writeText(value.slice(selectionStart, selectionEnd))
+      applyEdit({
+        newValue: value.slice(0, selectionStart) + value.slice(selectionEnd),
+        newCursorPos: selectionStart,
       })
-    } else if (id === 'paste') {
+      return
+    }
+
+    if (id === 'paste') {
       const clip = await navigator.clipboard.readText()
-      const { selectionStart, selectionEnd, value } = textarea
-      onTextChange(value.slice(0, selectionStart) + clip + value.slice(selectionEnd))
-      requestAnimationFrame(() => {
-        textarea.focus()
-        textarea.setSelectionRange(selectionStart + clip.length, selectionStart + clip.length)
+      applyEdit({
+        newValue: value.slice(0, selectionStart) + clip + value.slice(selectionEnd),
+        newCursorPos: selectionStart + clip.length,
       })
-    } else if (id === 'bold' || id === 'italic' || id === 'strikethrough' || id === 'highlight' || id === 'code') {
-      const markers = { bold: '**', italic: '*', strikethrough: '~~', code: '`' }
-      const { selectionStart, selectionEnd, value } = textarea
-      const { newValue, newSelectionStart, newSelectionEnd } = wrapSelection(value, selectionStart, selectionEnd, markers[id])
-      onTextChange(newValue)
-      requestAnimationFrame(() => {
-        textarea.focus()
-        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
-      })
-    } else if (id === 'blockquote') {
-      const { selectionStart, selectionEnd, value } = textarea
-      const { newValue, newSelectionStart, newSelectionEnd } = toggleBlockquote(value, selectionStart, selectionEnd)
-      onTextChange(newValue)
-      requestAnimationFrame(() => {
-        textarea.focus()
-        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
-      })
-    } else if (id === 'heading') {
-      const { selectionStart, selectionEnd, value } = textarea
-      const { newValue, newSelectionStart, newSelectionEnd } = cycleHeading(value, selectionStart, selectionEnd)
-      onTextChange(newValue)
-      requestAnimationFrame(() => {
-        textarea.focus()
-        textarea.setSelectionRange(newSelectionStart, newSelectionEnd)
-      })
+      return
+    }
+
+    if (isWrapMarker(id)) {
+      applyEdit(wrapSelection(value, selectionStart, selectionEnd, WRAP_MARKERS[id]))
+      return
+    }
+
+    if (id === 'blockquote') {
+      applyEdit(toggleBlockquote(value, selectionStart, selectionEnd))
+      return
+    }
+
+    if (id === 'heading') {
+      applyEdit(cycleHeading(value, selectionStart, selectionEnd))
     }
   }
 
-  const handleActionRef = useRef(null)
-  useEffect(() => { handleActionRef.current = handleAction })
-
-  useEffect(() => {
-    function onKeyDown(e) {
-      const mod = e.metaKey || e.ctrlKey
-      if (!mod) return
-      const key = e.key.toLowerCase()
-      if (key === 'z' && !e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('undo')
-      } else if (key === 'z' && e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('redo')
-      } else if (key === 'h' && e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('heading')
-      } else if (key === 'b' && !e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('bold')
-      } else if (key === 'i' && !e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('italic')
-      } else if (key === 'x' && e.shiftKey) {
-        e.preventDefault()
-        handleActionRef.current('strikethrough')
-      }
-    }
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [])
+  useHotkeys([
+    { key: 'z', handler: () => handleAction('undo') },
+    { key: 'z', shift: true, handler: () => handleAction('redo') },
+    { key: 'h', shift: true, handler: () => handleAction('heading') },
+    { key: 'b', handler: () => handleAction('bold') },
+    { key: 'i', handler: () => handleAction('italic') },
+    { key: 'x', shift: true, handler: () => handleAction('strikethrough') },
+  ])
 
   return (
     <Dropdown>
@@ -173,5 +175,3 @@ function EditMenu({ textareaRef, onTextChange, onUndo, onRedo }) {
     </Dropdown>
   )
 }
-
-export default EditMenu
