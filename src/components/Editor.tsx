@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import type { ChangeEvent, KeyboardEvent } from 'react'
 import { marked } from 'marked'
 import { useEditor } from '../context/useEditor'
-import { continueList } from '../lib/markdown'
+import { continueList, indentListItem, isListItemAtCursor, outdentListItem } from '../lib/markdown'
 
 const UNSAFE_TAGS = /<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi
 
@@ -14,12 +14,31 @@ export function Editor() {
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key !== 'Enter') return
     const textarea = e.currentTarget
-    const edit = continueList(textarea.value, textarea.selectionStart, textarea.selectionEnd)
-    if (!edit) return
-    e.preventDefault()
-    applyEdit(edit)
+
+    if (e.key === 'Enter') {
+      const edit = continueList(textarea.value, textarea.selectionStart, textarea.selectionEnd)
+      if (!edit) return
+      e.preventDefault()
+      applyEdit(edit)
+      return
+    }
+
+    if (e.key === 'Tab') {
+      if (!e.shiftKey) {
+        const edit = indentListItem(textarea.value, textarea.selectionStart)
+        if (edit) {
+          e.preventDefault()
+          applyEdit(edit)
+        }
+      } else {
+        if (isListItemAtCursor(textarea.value, textarea.selectionStart)) {
+          e.preventDefault()
+          const edit = outdentListItem(textarea.value, textarea.selectionStart)
+          if (edit) applyEdit(edit)
+        }
+      }
+    }
   }
 
   const html = useMemo(() => {

@@ -1,4 +1,4 @@
-import { insertSnippet, wrapSelection, toggleBlockquote, cycleHeading, continueList } from './markdown'
+import { insertSnippet, wrapSelection, toggleBlockquote, cycleHeading, continueList, indentListItem, outdentListItem, isListItemAtCursor } from './markdown'
 
 describe('continueList', () => {
   describe('task list (GFM: - [ ])', () => {
@@ -145,6 +145,140 @@ describe('continueList', () => {
       const result = continueList(text, 7, 7)!
       expect(result.newValue).toBe('- first\n- \n- second')
     })
+  })
+})
+
+describe('indentListItem', () => {
+  it('indents an unordered list item by 2 spaces', () => {
+    const text = '- item'
+    const result = indentListItem(text, text.length)!
+    expect(result.newValue).toBe('  - item')
+    expect(result.newCursorPos).toBe(text.length + 2)
+  })
+
+  it('indents a task list item', () => {
+    const text = '- [ ] task'
+    const result = indentListItem(text, text.length)!
+    expect(result.newValue).toBe('  - [ ] task')
+  })
+
+  it('indents an ordered list item', () => {
+    const text = '1. first'
+    const result = indentListItem(text, text.length)!
+    expect(result.newValue).toBe('  1. first')
+  })
+
+  it('indents an already-indented item further', () => {
+    const text = '  - item'
+    const result = indentListItem(text, text.length)!
+    expect(result.newValue).toBe('    - item')
+  })
+
+  it('shifts cursor forward by 2', () => {
+    const text = '- item'
+    const result = indentListItem(text, 3)!
+    expect(result.newCursorPos).toBe(5)
+  })
+
+  it('only affects the current line in multi-line text', () => {
+    const text = '- first\n- second'
+    const cursor = text.length
+    const result = indentListItem(text, cursor)!
+    expect(result.newValue).toBe('- first\n  - second')
+  })
+
+  it('returns null for plain text', () => {
+    expect(indentListItem('just text', 9)).toBeNull()
+  })
+
+  it('returns null for a heading', () => {
+    expect(indentListItem('# heading', 9)).toBeNull()
+  })
+})
+
+describe('outdentListItem', () => {
+  it('removes 2 spaces from an indented unordered item', () => {
+    const text = '  - item'
+    const result = outdentListItem(text, text.length)!
+    expect(result.newValue).toBe('- item')
+    expect(result.newCursorPos).toBe(text.length - 2)
+  })
+
+  it('removes 2 spaces from an indented task item', () => {
+    const text = '  - [ ] task'
+    const result = outdentListItem(text, text.length)!
+    expect(result.newValue).toBe('- [ ] task')
+  })
+
+  it('removes 2 spaces from an indented ordered item', () => {
+    const text = '  1. first'
+    const result = outdentListItem(text, text.length)!
+    expect(result.newValue).toBe('1. first')
+  })
+
+  it('removes only 2 spaces even when indented by 4', () => {
+    const text = '    - item'
+    const result = outdentListItem(text, text.length)!
+    expect(result.newValue).toBe('  - item')
+  })
+
+  it('clamps cursor to line start when cursor is within the removed indentation', () => {
+    const text = '  - item'
+    const result = outdentListItem(text, 1)!
+    expect(result.newCursorPos).toBe(0)
+  })
+
+  it('shifts cursor back by 2 when cursor is after the removed spaces', () => {
+    const text = '  - item'
+    const result = outdentListItem(text, 5)!
+    expect(result.newCursorPos).toBe(3)
+  })
+
+  it('returns null when there is no indentation', () => {
+    expect(outdentListItem('- item', 6)).toBeNull()
+  })
+
+  it('returns null for plain text', () => {
+    expect(outdentListItem('just text', 9)).toBeNull()
+  })
+
+  it('only affects the current line in multi-line text', () => {
+    const text = '- first\n  - second'
+    const cursor = text.length
+    const result = outdentListItem(text, cursor)!
+    expect(result.newValue).toBe('- first\n- second')
+  })
+})
+
+describe('isListItemAtCursor', () => {
+  it('returns true for an unordered list line', () => {
+    expect(isListItemAtCursor('- item', 3)).toBe(true)
+  })
+
+  it('returns true for a task list line', () => {
+    expect(isListItemAtCursor('- [ ] task', 5)).toBe(true)
+  })
+
+  it('returns true for an ordered list line', () => {
+    expect(isListItemAtCursor('1. first', 4)).toBe(true)
+  })
+
+  it('returns true for an indented list line', () => {
+    expect(isListItemAtCursor('  - item', 5)).toBe(true)
+  })
+
+  it('returns false for plain text', () => {
+    expect(isListItemAtCursor('just text', 4)).toBe(false)
+  })
+
+  it('returns false for a heading', () => {
+    expect(isListItemAtCursor('# heading', 4)).toBe(false)
+  })
+
+  it('returns true for the correct line in multi-line text', () => {
+    const text = 'plain\n- list item'
+    expect(isListItemAtCursor(text, text.length)).toBe(true)
+    expect(isListItemAtCursor(text, 2)).toBe(false)
   })
 })
 

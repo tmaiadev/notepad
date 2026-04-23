@@ -75,6 +75,41 @@ export function continueList(
   }
 }
 
+function getLineAtCursor(value: string, selectionStart: number): { lineStart: number; line: string } {
+  const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1
+  const rawLineEnd = value.indexOf('\n', lineStart)
+  const lineEnd = rawLineEnd === -1 ? value.length : rawLineEnd
+  return { lineStart, line: value.slice(lineStart, lineEnd) }
+}
+
+export function isListItemAtCursor(value: string, selectionStart: number): boolean {
+  const { line } = getLineAtCursor(value, selectionStart)
+  return detectListPrefix(line) !== null
+}
+
+export function indentListItem(value: string, selectionStart: number): CursorEdit | null {
+  const { lineStart, line } = getLineAtCursor(value, selectionStart)
+  if (!detectListPrefix(line)) return null
+  return {
+    newValue: value.slice(0, lineStart) + '  ' + value.slice(lineStart),
+    newCursorPos: selectionStart + 2,
+  }
+}
+
+export function outdentListItem(value: string, selectionStart: number): CursorEdit | null {
+  const { lineStart, line } = getLineAtCursor(value, selectionStart)
+  if (!detectListPrefix(line)) return null
+
+  const leadingSpaces = line.match(/^ */)?.[0].length ?? 0
+  if (leadingSpaces === 0) return null
+
+  const toRemove = Math.min(2, leadingSpaces)
+  return {
+    newValue: value.slice(0, lineStart) + value.slice(lineStart + toRemove),
+    newCursorPos: Math.max(lineStart, selectionStart - toRemove),
+  }
+}
+
 function detectListPrefix(line: string): { matchedPrefix: string; nextPrefix: string } | null {
   const taskMatch = line.match(/^(\s*[-*+] \[[ x]\] )/)
   if (taskMatch) {
