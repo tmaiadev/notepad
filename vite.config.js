@@ -22,8 +22,14 @@ export default defineConfig({
         display: 'standalone',
         icons: [
           {
-            src: 'notepad-macOS-Default-1024x1024@2x.png',
-            sizes: '2048x2048',
+            src: 'icon-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-512x512.png',
+            sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
@@ -32,6 +38,22 @@ export default defineConfig({
             sizes: '2048x2048',
             type: 'image/png',
             purpose: 'maskable',
+          },
+        ],
+        screenshots: [
+          {
+            src: 'screenshot-wide.png',
+            sizes: '1280x800',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Notepad on desktop',
+          },
+          {
+            src: 'screenshot-narrow.png',
+            sizes: '390x844',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Notepad on mobile',
           },
         ],
       },
