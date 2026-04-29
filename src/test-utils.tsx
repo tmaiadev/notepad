@@ -1,7 +1,7 @@
 import { render, type RenderOptions, type RenderResult } from '@testing-library/react'
 import type { ReactElement, RefObject } from 'react'
 import { EditorContext, type EditorContextValue } from './context/editorContext'
-import type { ViewMode } from './types'
+import type { Tab, ViewMode } from './types'
 
 interface TextareaStub {
   value: string
@@ -25,12 +25,24 @@ export function makeTextareaStub(
   }
 }
 
+const DEFAULT_TAB_ID = 'tab-default'
+
 export function makeEditorValue(overrides: Partial<EditorContextValue> = {}): EditorContextValue {
   const { textareaRef, ...rest } = overrides
   const ref: RefObject<HTMLTextAreaElement | null> = textareaRef ?? { current: null }
+  const text = overrides.text ?? ''
+  const defaultTab: Tab = {
+    id: DEFAULT_TAB_ID,
+    fileName: overrides.fileName ?? 'Untitled',
+    text,
+    fileHandle: overrides.fileHandle ?? null,
+    savedText: null,
+  }
 
   return {
-    text: '',
+    text,
+    fileName: 'Untitled',
+    fileHandle: null,
     viewMode: 'raw' as ViewMode,
     setText: jest.fn(),
     clearText: jest.fn(),
@@ -38,6 +50,13 @@ export function makeEditorValue(overrides: Partial<EditorContextValue> = {}): Ed
     undo: jest.fn(),
     redo: jest.fn(),
     applyEdit: jest.fn(),
+    tabs: [defaultTab],
+    activeTabId: DEFAULT_TAB_ID,
+    newTab: jest.fn(),
+    openTab: jest.fn(),
+    closeTab: jest.fn(),
+    switchTab: jest.fn(),
+    updateActiveTab: jest.fn(),
     ...rest,
     textareaRef: ref,
   }

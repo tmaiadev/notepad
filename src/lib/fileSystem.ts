@@ -71,6 +71,10 @@ export async function saveFileAs(text: string): Promise<FileSystemFileHandle | n
   return null
 }
 
+export async function syncFile(text: string, handle: FileSystemFileHandle): Promise<void> {
+  return writeToHandle(handle, text)
+}
+
 async function writeToHandle(handle: FileSystemFileHandle, text: string): Promise<void> {
   const writable = await handle.createWritable()
   await writable.write(text)

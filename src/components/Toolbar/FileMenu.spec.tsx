@@ -8,17 +8,19 @@ interface MockHandle {
   closeFn: jest.Mock
 }
 
-function createMockHandle(): MockHandle {
+function createMockHandle(name = 'untitled.txt'): MockHandle {
   const writeFn = jest.fn().mockResolvedValue(undefined)
   const closeFn = jest.fn().mockResolvedValue(undefined)
   const handle = {
+    name,
     createWritable: jest.fn().mockResolvedValue({ write: writeFn, close: closeFn }),
   } as unknown as FileSystemFileHandle
   return { handle, writeFn, closeFn }
 }
 
-function createMockReadHandle(content: string) {
+function createMockReadHandle(content: string, name = 'file.txt') {
   return {
+    name,
     getFile: jest.fn().mockResolvedValue({
       text: jest.fn().mockResolvedValue(content),
     }),
@@ -120,115 +122,41 @@ describe('FileMenu', () => {
   })
 
   describe('New action', () => {
-    it('clears immediately when text is empty', () => {
-      const clearText = jest.fn()
-      renderWithEditor(<FileMenu />, { text: '', clearText })
+    it('calls newTab when File->New is clicked', () => {
+      const newTab = jest.fn()
+      renderWithEditor(<FileMenu />, { newTab })
       fireEvent.click(screen.getByText('New'))
+      expect(newTab).toHaveBeenCalled()
+    })
+
+    it('calls newTab even when text is non-empty', () => {
+      const newTab = jest.fn()
+      renderWithEditor(<FileMenu />, { text: 'some content', newTab })
+      fireEvent.click(screen.getByText('New'))
+      expect(newTab).toHaveBeenCalled()
       expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
-      expect(clearText).toHaveBeenCalled()
-    })
-
-    it('shows confirmation dialog when text is not empty', () => {
-      renderWithEditor(<FileMenu />, { text: 'some content' })
-      fireEvent.click(screen.getByText('New'))
-      expect(screen.getByText('Unsaved Changes')).toBeInTheDocument()
-      expect(screen.getByText(/Do you want to save your changes/)).toBeInTheDocument()
-    })
-
-    it('Cancel closes dialog without changing anything', () => {
-      const clearText = jest.fn()
-      renderWithEditor(<FileMenu />, { text: 'keep me', clearText })
-      fireEvent.click(screen.getByText('New'))
-      expect(screen.getByText('Unsaved Changes')).toBeInTheDocument()
-      fireEvent.click(screen.getByText('Cancel'))
-      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
-      expect(clearText).not.toHaveBeenCalled()
-    })
-
-    it('No discards content and closes dialog', () => {
-      const clearText = jest.fn()
-      renderWithEditor(<FileMenu />, { text: 'old stuff', clearText })
-      fireEvent.click(screen.getByText('New'))
-      fireEvent.click(screen.getByText('No'))
-      expect(clearText).toHaveBeenCalled()
-      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
-    })
-
-    it('Yes saves then clears content and closes dialog', async () => {
-      const { handle, writeFn } = createMockHandle()
-      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = jest.fn().mockResolvedValue(handle)
-      const clearText = jest.fn()
-      renderWithEditor(<FileMenu />, { text: 'save me', clearText })
-      fireEvent.click(screen.getByText('New'))
-      fireEvent.click(screen.getByText('Yes'))
-      await flush()
-      expect((window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker).toHaveBeenCalled()
-      expect(writeFn).toHaveBeenCalledWith('save me')
-      expect(clearText).toHaveBeenCalled()
-      expect(screen.queryByText('Unsaved Changes')).not.toBeInTheDocument()
-    })
-
-    it('Yes + Save clears the stored handle so next Save prompts picker', async () => {
-      const { handle: firstHandle, writeFn: firstWriteFn } = createMockHandle()
-      const { handle: secondHandle } = createMockHandle()
-      const pickerMock = jest.fn()
-        .mockResolvedValueOnce(firstHandle)
-        .mockResolvedValueOnce(secondHandle)
-      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = pickerMock
-      renderWithEditor(<FileMenu />, { text: 'content' })
-
-      fireEvent.click(screen.getByText('New'))
-      fireEvent.click(screen.getByText('Yes'))
-      await flush()
-      expect(firstWriteFn).toHaveBeenCalledWith('content')
-
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-      expect(pickerMock).toHaveBeenCalledTimes(2)
     })
   })
 
   describe('Open action', () => {
-    it('opens file via showOpenFilePicker and sets text', async () => {
-      const readHandle = createMockReadHandle('file content here')
+    it('opens file via showOpenFilePicker and calls openTab', async () => {
+      const readHandle = createMockReadHandle('file content here', 'notes.txt')
       ;(window as typeof window & { showOpenFilePicker: jest.Mock }).showOpenFilePicker = jest.fn().mockResolvedValue([readHandle])
-      const setText = jest.fn()
+      const openTab = jest.fn()
 
-      renderWithEditor(<FileMenu />, { text: '', setText })
+      renderWithEditor(<FileMenu />, { openTab })
       fireEvent.click(screen.getByText('Open'))
       await flush()
 
-      expect((window as typeof window & { showOpenFilePicker: jest.Mock }).showOpenFilePicker).toHaveBeenCalledWith({
-        types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt', '.md'] } }],
-        multiple: false,
+      expect(openTab).toHaveBeenCalledWith({
+        fileName: 'notes.txt',
+        text: 'file content here',
+        fileHandle: readHandle,
       })
-      expect(readHandle.getFile).toHaveBeenCalled()
-      expect(setText).toHaveBeenCalledWith('file content here')
-    })
-
-    it('stores opened file handle so Save reuses it', async () => {
-      const readHandle = createMockReadHandle('opened text')
-      const writeFn = jest.fn().mockResolvedValue(undefined)
-      const closeFn = jest.fn().mockResolvedValue(undefined)
-      readHandle.createWritable = jest.fn().mockResolvedValue({ write: writeFn, close: closeFn })
-      ;(window as typeof window & { showOpenFilePicker: jest.Mock }).showOpenFilePicker = jest.fn().mockResolvedValue([readHandle])
-      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = jest.fn()
-
-      renderWithEditor(<FileMenu />, { text: 'opened text' })
-
-      fireEvent.click(screen.getByText('Open'))
-      await flush()
-
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-
-      expect((window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker).not.toHaveBeenCalled()
-      expect(writeFn).toHaveBeenCalledWith('opened text')
-      expect(closeFn).toHaveBeenCalled()
     })
 
     it('falls back to file input when showOpenFilePicker is unavailable', async () => {
-      const setText = jest.fn()
+      const openTab = jest.fn()
       const clickSpy = jest.fn()
       const origCreateElement = document.createElement.bind(document)
       const spy = jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
@@ -242,24 +170,25 @@ describe('FileMenu', () => {
         return el
       })
 
-      renderWithEditor(<FileMenu />, { text: '', setText })
+      renderWithEditor(<FileMenu />, { openTab })
       fireEvent.click(screen.getByText('Open'))
       await flush()
 
       expect(clickSpy).toHaveBeenCalled()
 
-      const inputCall = spy.mock.calls.find(([tag]) => tag === 'input')
-      expect(inputCall).toBeTruthy()
-
       const inputEl = spy.mock.results.find((_r, i) => spy.mock.calls[i]![0] === 'input')!.value as HTMLInputElement
       fireEvent.change(inputEl)
       await flush()
 
-      expect(setText).toHaveBeenCalledWith('fallback file content')
+      expect(openTab).toHaveBeenCalledWith({
+        fileName: 'Untitled',
+        text: 'fallback file content',
+        fileHandle: null,
+      })
     })
 
     it('falls back to file input and does nothing when user cancels', async () => {
-      const setText = jest.fn()
+      const openTab = jest.fn()
       const clickSpy = jest.fn()
       const origCreateElement = document.createElement.bind(document)
       const spy = jest.spyOn(document, 'createElement').mockImplementation((tag: string) => {
@@ -271,7 +200,7 @@ describe('FileMenu', () => {
         return el
       })
 
-      renderWithEditor(<FileMenu />, { text: '', setText })
+      renderWithEditor(<FileMenu />, { openTab })
       fireEvent.click(screen.getByText('Open'))
       await flush()
 
@@ -279,42 +208,41 @@ describe('FileMenu', () => {
       fireEvent.change(inputEl)
       await flush()
 
-      expect(setText).not.toHaveBeenCalled()
+      expect(openTab).not.toHaveBeenCalled()
     })
   })
 
   describe('Save action', () => {
-    it('prompts file picker on first save and writes content', async () => {
-      const { handle, writeFn, closeFn } = createMockHandle()
+    it('prompts file picker on first save and calls updateActiveTab', async () => {
+      const { handle, writeFn, closeFn } = createMockHandle('untitled.txt')
       ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = jest.fn().mockResolvedValue(handle)
+      const updateActiveTab = jest.fn()
 
-      renderWithEditor(<FileMenu />, { text: 'hello world' })
+      renderWithEditor(<FileMenu />, { text: 'hello world', updateActiveTab })
       fireEvent.click(screen.getByText('Save'))
       await flush()
 
-      expect((window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker).toHaveBeenCalledWith({
-        suggestedName: 'untitled.txt',
-        types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt', '.md'] } }],
-      })
       expect(writeFn).toHaveBeenCalledWith('hello world')
       expect(closeFn).toHaveBeenCalled()
+      expect(updateActiveTab).toHaveBeenCalledWith({
+        fileHandle: handle,
+        fileName: 'untitled.txt',
+        savedText: 'hello world',
+      })
     })
 
     it('reuses stored handle on subsequent saves without prompting', async () => {
       const { handle, writeFn } = createMockHandle()
       const pickerMock = jest.fn().mockResolvedValue(handle)
       ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = pickerMock
-      renderWithEditor(<FileMenu />, { text: 'first save' })
+      const updateActiveTab = jest.fn()
 
+      renderWithEditor(<FileMenu />, { text: 'first save', fileHandle: handle, updateActiveTab })
       fireEvent.click(screen.getByText('Save'))
       await flush()
-      expect(pickerMock).toHaveBeenCalledTimes(1)
+
+      expect(pickerMock).not.toHaveBeenCalled()
       expect(writeFn).toHaveBeenCalledWith('first save')
-
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-      expect(pickerMock).toHaveBeenCalledTimes(1)
-      expect(writeFn).toHaveBeenCalledTimes(2)
     })
 
     it('falls back to download link when showSaveFilePicker is unavailable', async () => {
@@ -333,47 +261,21 @@ describe('FileMenu', () => {
   })
 
   describe('Save As action', () => {
-    it('always prompts file picker even when a handle exists', async () => {
-      const { handle: firstHandle, writeFn: firstWriteFn } = createMockHandle()
-      const { handle: secondHandle, writeFn: secondWriteFn } = createMockHandle()
-      const pickerMock = jest.fn()
-        .mockResolvedValueOnce(firstHandle)
-        .mockResolvedValueOnce(secondHandle)
-      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = pickerMock
+    it('always prompts file picker and calls updateActiveTab', async () => {
+      const { handle, writeFn } = createMockHandle('my-file.txt')
+      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = jest.fn().mockResolvedValue(handle)
+      const updateActiveTab = jest.fn()
 
-      renderWithEditor(<FileMenu />, { text: 'my text' })
-
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-      expect(firstWriteFn).toHaveBeenCalledWith('my text')
-
-      fireEvent.click(screen.getByText('Save As'))
-      await flush()
-      expect(pickerMock).toHaveBeenCalledTimes(2)
-      expect(secondWriteFn).toHaveBeenCalledWith('my text')
-    })
-
-    it('updates stored handle so next Save uses the new file', async () => {
-      const { handle: firstHandle, writeFn: firstWriteFn } = createMockHandle()
-      const { handle: secondHandle, writeFn: secondWriteFn } = createMockHandle()
-      const pickerMock = jest.fn()
-        .mockResolvedValueOnce(firstHandle)
-        .mockResolvedValueOnce(secondHandle)
-      ;(window as typeof window & { showSaveFilePicker: jest.Mock }).showSaveFilePicker = pickerMock
-
-      renderWithEditor(<FileMenu />, { text: 'content' })
-
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-
+      renderWithEditor(<FileMenu />, { text: 'my text', updateActiveTab })
       fireEvent.click(screen.getByText('Save As'))
       await flush()
 
-      fireEvent.click(screen.getByText('Save'))
-      await flush()
-      expect(pickerMock).toHaveBeenCalledTimes(2)
-      expect(firstWriteFn).toHaveBeenCalledTimes(1)
-      expect(secondWriteFn).toHaveBeenCalledTimes(2)
+      expect(writeFn).toHaveBeenCalledWith('my text')
+      expect(updateActiveTab).toHaveBeenCalledWith({
+        fileHandle: handle,
+        fileName: 'my-file.txt',
+        savedText: 'my text',
+      })
     })
 
     it('falls back to download link when showSaveFilePicker is unavailable', async () => {

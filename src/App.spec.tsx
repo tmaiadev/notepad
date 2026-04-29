@@ -37,7 +37,7 @@ describe('App', () => {
     const textarea = screen.getByPlaceholderText('Start typing...')
     fireEvent.change(textarea, { target: { value: 'hello world' } })
     expect(textarea).toHaveValue('hello world')
-    expect(localStorage.getItem('notepad')).toBe('hello world')
+    expect(JSON.parse(localStorage.getItem('notepad')!).tabs[0].text).toBe('hello world')
   })
 
   it('renders parsed markdown in visualizer mode', () => {
@@ -81,7 +81,7 @@ describe('App', () => {
       fireEvent.change(textarea, { target: { value: 'first' } })
       fireEvent.change(textarea, { target: { value: 'second' } })
       fireEvent.click(screen.getByText('Undo').closest('li')!)
-      expect(localStorage.getItem('notepad')).toBe('first')
+      expect(JSON.parse(localStorage.getItem('notepad')!).tabs[0].text).toBe('first')
     })
 
     it('does nothing when already at the beginning of history', () => {
@@ -123,7 +123,7 @@ describe('App', () => {
       fireEvent.change(textarea, { target: { value: 'v2' } })
       fireEvent.click(screen.getByText('Undo').closest('li')!)
       fireEvent.click(screen.getByText('Redo').closest('li')!)
-      expect(localStorage.getItem('notepad')).toBe('v2')
+      expect(JSON.parse(localStorage.getItem('notepad')!).tabs[0].text).toBe('v2')
     })
 
     it('does nothing when there is nothing to redo', () => {

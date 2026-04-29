@@ -1,5 +1,19 @@
 export type ViewMode = 'raw' | 'visualizer'
 
+export interface Tab {
+  id: string
+  fileName: string
+  text: string
+  fileHandle: FileSystemFileHandle | null
+  savedText: string | null
+}
+
+export interface TabInitOptions {
+  fileName?: string
+  text?: string
+  fileHandle?: FileSystemFileHandle | null
+}
+
 export interface SelectionEdit {
   newValue: string
   newSelectionStart: number
